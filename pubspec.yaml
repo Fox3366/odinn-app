@@ -1,0 +1,34 @@
+name: muninn_iha_v2
+description: "ODİN – Tactical Aerial Intelligence Controller"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # MAVLink protokolü
+  dart_mavlink: ^0.1.0
+
+  # Konum
+  geolocator: ^10.1.0
+  permission_handler: ^11.0.1
+
+  # Kalıcı ayarlar
+  shared_preferences: ^2.5.4
+
+  # İkon seti
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

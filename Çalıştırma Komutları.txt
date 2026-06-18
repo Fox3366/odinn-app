@@ -1,0 +1,6 @@
+mavproxy.exe --master=COM3 --baudrate=57600 --out=udp:127.0.0.1:14550 --out=udpin:0.0.0.0:14540
+
++ com portunu telemetriye göre değiştir.
++ hata alırsan baudrate+=*2 olarak değiştir iletim hızını arttır.
++ çıkış portu ve giriş portunu tailscale e göre ayarla -> sondaki telefon için, baştaki qgc için.
++ ilk out'u değiştirmeye gerek yok ikinciyi ip ve porta göre değiştir.
