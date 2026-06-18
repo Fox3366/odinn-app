@@ -61,7 +61,7 @@ class ConnectionPanel extends StatelessWidget {
         _header('BAĞLANTI AYARLARI', Icons.wifi),
         const SizedBox(height: 14),
         Row(children: [
-          Expanded(flex: 3, child: _field(controller: ipCtrl,   label: 'IP ADRESİ', hint: '10.0.2.2', icon: Icons.router_outlined, keyboard: TextInputType.number)),
+          Expanded(flex: 3, child: _field(controller: ipCtrl,   label: 'IP ADRESİ', hint: '10.0.2.2', icon: Icons.router_outlined, keyboard: TextInputType.url)),
           const SizedBox(width: 10),
           Expanded(flex: 2, child: _field(controller: portCtrl, label: 'PORT',      hint: '14540',    icon: Icons.numbers,          keyboard: TextInputType.number)),
         ]),
