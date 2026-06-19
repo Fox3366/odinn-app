@@ -5,11 +5,16 @@ import 'telemetry_chip.dart';
 
 /// Video HUD altında gösterilen kompakt telemetri şeridi.
 /// DroneTelemetry verisini alarak batarya, hız, irtifa, mesafe,
-/// GPS uydu, uçuş modu bilgilerini yatay chip'ler halinde gösterir.
+/// GPS uydu, uçuş modu, voltaj ve uçuş süresi bilgilerini gösterir.
 class TelemetryBar extends StatelessWidget {
   final DroneTelemetry telemetry;
+  final Duration flightTime;
 
-  const TelemetryBar({super.key, required this.telemetry});
+  const TelemetryBar({
+    super.key,
+    required this.telemetry,
+    this.flightTime = Duration.zero,
+  });
 
   Color _batteryColor() {
     if (telemetry.batteryPercent < 0)  return AppColors.grey;
@@ -32,6 +37,26 @@ class TelemetryBar extends StatelessWidget {
     return AppColors.red;
   }
 
+  Color _modeColor() {
+    final m = telemetry.flightMode.toUpperCase();
+    if (m.contains('RTL') || m.contains('LAND'))   return AppColors.amber;
+    if (m.contains('MISSION') || m.contains('AUTO')) return AppColors.cyan;
+    if (m.contains('STABILIZED') || m.contains('MANUAL')) return AppColors.redL;
+    if (m.contains('OFFBOARD'))  return AppColors.green;
+    if (m.contains('LOITER') || m.contains('POSCTL')) return AppColors.green;
+    return AppColors.white;
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      final h = d.inHours.toString().padLeft(2, '0');
+      return '$h:$m:$s';
+    }
+    return '$m:$s';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -45,13 +70,23 @@ class TelemetryBar extends StatelessWidget {
         spacing: 6,
         runSpacing: 6,
         children: [
-          // Batarya
+          // Batarya %
           TelemetryChip(
             icon:  _batteryIcon(),
             value: telemetry.batteryPercent >= 0
                 ? '${telemetry.batteryPercent}'
                 : '--',
             unit:  '%',
+            color: _batteryColor(),
+          ),
+
+          // Batarya Voltaj
+          TelemetryChip(
+            icon:  Icons.bolt,
+            value: telemetry.batteryVoltage > 0
+                ? telemetry.batteryVoltage.toStringAsFixed(1)
+                : '--',
+            unit:  'V',
             color: _batteryColor(),
           ),
 
@@ -89,12 +124,20 @@ class TelemetryBar extends StatelessWidget {
             color: _gpsColor(),
           ),
 
-          // Uçuş modu
+          // Uçuş Modu
           TelemetryChip(
             icon:  Icons.flight,
             value: telemetry.flightMode,
-            color: AppColors.white,
+            color: _modeColor(),
           ),
+
+          // Uçuş Süresi
+          if (telemetry.isArmed || flightTime > Duration.zero)
+            TelemetryChip(
+              icon:  Icons.timer_outlined,
+              value: _formatDuration(flightTime),
+              color: telemetry.isArmed ? AppColors.green : AppColors.grey,
+            ),
         ],
       ),
     );

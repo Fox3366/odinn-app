@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     
     <application
-        android:label="muninn_iha_v2"
+        android:label="Odin Flight Monster"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

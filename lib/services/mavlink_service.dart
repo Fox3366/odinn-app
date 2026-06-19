@@ -172,6 +172,9 @@ class MavlinkService {
   /// Loiter (askı) modu — PX4'te main_mode = 4 (AUTO), sub_mode = 3 (LOITER)
   void sendHold() => _setPx4Mode(4, 3);
 
+  /// Stabilize modu — PX4'te main_mode = 7 (STABILIZED)
+  void sendStabilize() => _setPx4Mode(7, 0);
+
   /// Follow modu — PX4'te main_mode = 4 (AUTO), sub_mode = 8 (FOLLOW_TARGET)
   void sendFollowMode() => _setPx4Mode(4, 8);
 

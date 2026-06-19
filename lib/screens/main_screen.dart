@@ -15,6 +15,7 @@ import '../services/location_service.dart';
 import '../services/settings_service.dart';
 import '../services/video_service.dart';
 import '../services/telemetry_service.dart';
+import '../services/flight_timer_service.dart';
 import '../painters/bg_scan_painter.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_hud.dart';
@@ -42,6 +43,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   final _settings   = SettingsService();
   final _video      = VideoService();
   final _telemetry  = TelemetryService();
+  final _flightTimer = FlightTimerService();
 
   // --- Subscription'lar ---
   StreamSubscription<bool>?          _connSub;
@@ -50,6 +52,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   StreamSubscription<Uint8List>?     _videoSub;
   StreamSubscription<bool>?          _videoConnSub;
   StreamSubscription<DroneTelemetry>? _telemetrySub;
+  StreamSubscription<Duration>?      _flightTimerSub;
 
   // --- UI Durumu ---
   double      _lat = 0, _lon = 0, _alt = 0;
@@ -61,6 +64,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Uint8List?  _currentFrame;
   DroneTelemetry _droneTelemetry = const DroneTelemetry();
   FlightSettings _flightSettings = const FlightSettings();
+  Duration _flightTime = Duration.zero;
 
   bool _isCommandPending    = false;
   bool _batteryWarningShown = false;
@@ -106,11 +110,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final fs = await _settings.loadFlightSettings();
     if (!mounted) return;
     setState(() {
-      _ipCtrl.text   = s.ip;
-      _portCtrl.text = s.port.toString();
+      _ipCtrl.text    = s.ip;
+      _portCtrl.text  = s.port.toString();
       _flightSettings = fs;
     });
     _mavlink.setTarget(s.ip, s.port);
+    _video.setTarget(s.ip);
     _follow.applySettings(fs);
   }
 
@@ -171,6 +176,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _initVideo() {
+    _video.setTarget(_ipCtrl.text);
     _video.start();
     _videoSub    = _video.frameStream.listen((f) {
       if (mounted) setState(() => _currentFrame = f);
@@ -182,8 +188,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   void _initTelemetry() {
     _telemetry.start();
+    
+    _flightTimerSub = _flightTimer.elapsedStream.listen((d) {
+      if (mounted) setState(() => _flightTime = d);
+    });
+
     _telemetrySub = _telemetry.telemetryStream.listen((t) {
       if (mounted) {
+        _flightTimer.updateArmState(t.isArmed);
         setState(() => _droneTelemetry = t);
         
         // Düşük batarya uyarısı (%20 altı)
@@ -203,6 +215,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final port = int.tryParse(_portCtrl.text.trim()) ?? 14540;
     await _settings.save(ip: ip, port: port);
     _mavlink.setTarget(ip, port);
+    _video.setTarget(ip);
     if (mounted) _snack('Hedef güncellendi ($ip:$port)', Icons.check_circle, AppColors.green);
   }
 
@@ -312,6 +325,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _snack('ORBİT komutu gönderildi (${radius.toStringAsFixed(0)}m) — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
   }
 
+  void _onStabilize() {
+    if (!_requireConnection()) return;
+    HapticFeedback.heavyImpact();
+    setState(() {
+      _followActive = false;
+      _isCommandPending = true;
+    });
+    _mavlink.sendStabilize();
+    _snack('STABİLİZE komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
+  }
+
   Future<void> _onTakeoff() async {
     if (!_requireConnection()) return;
     
@@ -408,9 +432,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _videoSub?.cancel();
     _videoConnSub?.cancel();
     _telemetrySub?.cancel();
+    _flightTimerSub?.cancel();
     _location.stop();
     _video.dispose();
     _telemetry.dispose();
+    _flightTimer.dispose();
     _pulseCtrl.dispose();
     _bgCtrl.dispose();
     _radarCtrl.dispose();
@@ -440,7 +466,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               TopBar(isConnected: _isConnected, pulse: _pulse),
               _buildMapArea(),
               const SizedBox(height: 6),
-              TelemetryBar(telemetry: _droneTelemetry),
+              TelemetryBar(telemetry: _droneTelemetry, flightTime: _flightTime),
               const SizedBox(height: 2),
               _buildTabBar(),
               Expanded(child: _buildTabContent()),
@@ -495,6 +521,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               onHold:             _onHold,
               onLand:             _onLand,
               onOrbit:            _onOrbit,
+              onStabilize:        _onStabilize,
               defaultOrbitRadius: _flightSettings.defaultOrbitRadius,
             ),
             if (_followActive) ...[

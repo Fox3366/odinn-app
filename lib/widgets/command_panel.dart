@@ -15,6 +15,7 @@ class CommandPanel extends StatelessWidget {
   final VoidCallback  onFollowToggle;
   final VoidCallback  onHold;
   final VoidCallback  onLand;
+  final VoidCallback  onStabilize;
   final void Function(double radius) onOrbit;
   final double        defaultOrbitRadius;
 
@@ -26,6 +27,7 @@ class CommandPanel extends StatelessWidget {
     required this.onFollowToggle,
     required this.onHold,
     required this.onLand,
+    required this.onStabilize,
     required this.onOrbit,
     this.defaultOrbitRadius = 50.0,
   });
@@ -92,6 +94,30 @@ class CommandPanel extends StatelessWidget {
     if (confirmed) onLand();
   }
 
+  /// Hold — onay dialogu gösterir
+  Future<void> _handleHold(BuildContext context) async {
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title:       'HOLD (HAVADA ASILI KAL)',
+      description: 'Drone bulunduğu konumda havada asılı kalacak (LOITER).\nMevcut görev veya takip durdurulacak.',
+      icon:        Icons.pause_circle_outline,
+      accentColor: Colors.orange,
+    );
+    if (confirmed) onHold();
+  }
+
+  /// Stabilize — onay dialogu gösterir
+  Future<void> _handleStabilize(BuildContext context) async {
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title:       'STABİLİZE',
+      description: 'Drone stabilize moduna alınacak.\nManuel kumanda kontrolü gerektirir.',
+      icon:        Icons.settings_backup_restore,
+      accentColor: AppColors.cyan,
+    );
+    if (confirmed) onStabilize();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -111,7 +137,9 @@ class CommandPanel extends StatelessWidget {
         ]),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: TacticalButton(label: 'HOLD', icon: Icons.pause_circle_outline, color: Colors.orange, onTap: onHold)),
+          Expanded(child: TacticalButton(label: 'HOLD', icon: Icons.pause_circle_outline, color: Colors.orange, onTap: () => _handleHold(context))),
+          const SizedBox(width: 10),
+          Expanded(child: TacticalButton(label: 'STABİLİZE', icon: Icons.settings_backup_restore, color: AppColors.cyan, onTap: () => _handleStabilize(context))),
           const SizedBox(width: 10),
           Expanded(child: TacticalButton(label: 'BACK TO\nLAND', icon: Icons.flight_land, color: AppColors.redL, onTap: () => _handleLand(context))),
         ]),

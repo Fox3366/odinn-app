@@ -32,10 +32,10 @@ jobs:
         run: |
           mkdir -p Payload
           mv build/ios/iphoneos/Runner.app Payload/
-          zip -qq -r Muninn_v2.ipa Payload
+          zip -qq -r Odin_Flight_Monster.ipa Payload
 
       - name: Upload iOS Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-build-ipa
-          path: Muninn_v2.ipa
+          path: Odin_Flight_Monster.ipa

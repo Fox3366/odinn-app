@@ -1,4 +1,9 @@
-mavproxy.exe --master=COM3 --baudrate=57600 --out=udp:127.0.0.1:14550 --out=udpin:0.0.0.0:14540
+mavproxy.exe --master=COM8 --baudrate=57600
+--out=udp:127.0.0.1:14550 --out=udp:100.82.70.52:14551(telefon ip) --out=udpin:0.0.0.0:14540(bilgisayarın ip si
+her komutu alması için 0.0.0.0 olmalı)
+
+çalışan komut: mavproxy.exe --master=COM8 --baudrate=57600
+               --out=udp:127.0.0.1:14550 --out=udp:100.82.70.52:14551 --out=udpin:0.0.0.0:14540
 
 + com portunu telemetriye göre değiştir.
 + hata alırsan baudrate+=*2 olarak değiştir iletim hızını arttır.
