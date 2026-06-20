@@ -3,6 +3,8 @@
 class DroneTelemetry {
   final double batteryVoltage;   // Volt
   final int    batteryPercent;   // 0-100 (-1 = bilinmiyor)
+  final double batteryCurrent;   // Amper
+  final int    throttle;         // % (0-100)
   final double groundSpeed;     // m/s
   final double altitude;        // metre (MSL)
   final double relativeAlt;     // metre (AGL — kalkış noktasına göre)
@@ -16,6 +18,8 @@ class DroneTelemetry {
   const DroneTelemetry({
     this.batteryVoltage = 0.0,
     this.batteryPercent = -1,
+    this.batteryCurrent = 0.0,
+    this.throttle       = 0,
     this.groundSpeed    = 0.0,
     this.altitude       = 0.0,
     this.relativeAlt    = 0.0,
@@ -31,6 +35,8 @@ class DroneTelemetry {
   DroneTelemetry copyWith({
     double? batteryVoltage,
     int?    batteryPercent,
+    double? batteryCurrent,
+    int?    throttle,
     double? groundSpeed,
     double? altitude,
     double? relativeAlt,
@@ -44,6 +50,8 @@ class DroneTelemetry {
     return DroneTelemetry(
       batteryVoltage: batteryVoltage ?? this.batteryVoltage,
       batteryPercent: batteryPercent ?? this.batteryPercent,
+      batteryCurrent: batteryCurrent ?? this.batteryCurrent,
+      throttle:       throttle       ?? this.throttle,
       groundSpeed:    groundSpeed    ?? this.groundSpeed,
       altitude:       altitude       ?? this.altitude,
       relativeAlt:    relativeAlt    ?? this.relativeAlt,

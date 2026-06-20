@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'tactical_button.dart';
+import 'transition_dialog.dart';
 
 /// Takeoff, RTL ve Mission Start butonlarını içeren ikinci komut paneli.
 /// Callback'ler main_screen'den gelir; dialog/onay mantığı oradan yönetilir.
@@ -10,6 +11,7 @@ class FlightCommandPanel extends StatelessWidget {
   final VoidCallback onTakeoff;
   final VoidCallback onRtl;
   final VoidCallback onMissionStart;
+  final void Function(bool toMulticopter) onTransition;
 
   const FlightCommandPanel({
     super.key,
@@ -18,6 +20,7 @@ class FlightCommandPanel extends StatelessWidget {
     required this.onTakeoff,
     required this.onRtl,
     required this.onMissionStart,
+    required this.onTransition,
   });
 
   Widget _header(String title, IconData icon) => Row(children: [
@@ -26,6 +29,13 @@ class FlightCommandPanel extends StatelessWidget {
     const SizedBox(width: 6),
     Text(title, style: const TextStyle(color: AppColors.white, fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.w600)),
   ]);
+
+  Future<void> _handleTransition(BuildContext context) async {
+    final toMc = await TransitionDialog.show(context);
+    if (toMc != null) {
+      onTransition(toMc);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,15 +78,25 @@ class FlightCommandPanel extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: TacticalButton(
-            label: 'GÖREV BAŞLAT',
-            icon: Icons.route,
-            color: AppColors.cyan,
-            onTap: onMissionStart,
+        Row(children: [
+          Expanded(
+            child: TacticalButton(
+              label: 'GÖREV BAŞLAT',
+              icon: Icons.route,
+              color: AppColors.cyan,
+              onTap: onMissionStart,
+            ),
           ),
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TacticalButton(
+              label: 'TRANSITION',
+              icon: Icons.transform,
+              color: AppColors.amber,
+              onTap: () => _handleTransition(context),
+            ),
+          ),
+        ]),
       ]),
     );
   }

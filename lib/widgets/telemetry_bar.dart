@@ -90,11 +90,29 @@ class TelemetryBar extends StatelessWidget {
             color: _batteryColor(),
           ),
 
+          // Batarya Akım
+          TelemetryChip(
+            icon:  Icons.electric_meter,
+            value: telemetry.batteryCurrent >= 0
+                ? telemetry.batteryCurrent.toStringAsFixed(1)
+                : '--',
+            unit:  'A',
+            color: _batteryColor(),
+          ),
+
           // Hız
           TelemetryChip(
             icon:  Icons.speed,
             value: telemetry.groundSpeed.toStringAsFixed(1),
             unit:  'm/s',
+            color: AppColors.cyan,
+          ),
+
+          // Throttle
+          TelemetryChip(
+            icon:  Icons.flight_takeoff, // or similar icon like swap_vert or adjust
+            value: '${telemetry.throttle}',
+            unit:  '%',
             color: AppColors.cyan,
           ),
 

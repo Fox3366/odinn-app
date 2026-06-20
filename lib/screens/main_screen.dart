@@ -377,6 +377,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _snack('RTL komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
   }
 
+  void _onTransition(bool toMulticopter) {
+    if (!_requireConnection()) return;
+    HapticFeedback.heavyImpact();
+    setState(() => _isCommandPending = true);
+    _mavlink.sendVtolTransition(toMulticopter: toMulticopter);
+    final modeStr = toMulticopter ? 'MULTICOPTER' : 'SABİT KANAT';
+    _snack('$modeStr geçiş komutu gönderildi...', Icons.hourglass_top, AppColors.cyan);
+  }
+
   Future<void> _onMissionStart() async {
     if (!_requireConnection()) return;
     final confirmed = await ConfirmDialog.show(
@@ -450,7 +459,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Stack(children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Stack(children: [
         AnimatedBuilder(
           animation: _bgCtrl,
           builder: (_, __) => CustomPaint(
@@ -472,7 +484,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               Expanded(child: _buildTabContent()),
             ]),
           ),
-      ]),
+        ]),
+      ),
     );
   }
 
@@ -535,6 +548,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               onTakeoff:      _onTakeoff,
               onRtl:          _onRtl,
               onMissionStart: _onMissionStart,
+              onTransition:   _onTransition,
             ),
             const SizedBox(height: 20),
             _buildFooter(),

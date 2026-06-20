@@ -51,7 +51,10 @@ class _OrbitDialogState extends State<OrbitDialog> {
         borderRadius: BorderRadius.circular(4),
         side: BorderSide(color: AppColors.cyan.withOpacity(0.5)),
       ),
-      child: Padding(
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           // İkon
@@ -158,6 +161,7 @@ class _OrbitDialogState extends State<OrbitDialog> {
             ),
           ]),
         ]),
+        ),
       ),
     );
   }

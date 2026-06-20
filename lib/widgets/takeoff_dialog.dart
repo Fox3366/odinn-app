@@ -50,7 +50,10 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
         borderRadius: BorderRadius.circular(4),
         side: BorderSide(color: AppColors.green.withOpacity(0.5)),
       ),
-      child: Padding(
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           // İkon
@@ -157,6 +160,7 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
             ),
           ]),
         ]),
+        ),
       ),
     );
   }

@@ -27,6 +27,8 @@ class TelemetryService {
   // --- Dahili mutable state (her frame'de güncellenir) ---
   double _batteryVoltage = 0.0;
   int    _batteryPercent = -1;
+  double _batteryCurrent = 0.0;
+  int    _throttle       = 0;
   double _groundSpeed    = 0.0;
   double _altitude       = 0.0;
   double _relativeAlt    = 0.0;
@@ -70,6 +72,7 @@ class TelemetryService {
     if (msg is SysStatus) {
       _batteryVoltage = msg.voltageBattery / 1000.0; // mV → V
       _batteryPercent = msg.batteryRemaining;         // -1 bilinmiyor
+      _batteryCurrent = msg.currentBattery >= 0 ? msg.currentBattery / 100.0 : -1.0; // cA → A
     }
 
     if (msg is GlobalPositionInt) {
@@ -80,6 +83,7 @@ class TelemetryService {
 
     if (msg is VfrHud) {
       _groundSpeed = msg.groundspeed; // m/s
+      _throttle    = msg.throttle;    // %
     }
 
     if (msg is GpsRawInt) {
@@ -104,6 +108,8 @@ class TelemetryService {
     _ctrl.add(DroneTelemetry(
       batteryVoltage: _batteryVoltage,
       batteryPercent: _batteryPercent,
+      batteryCurrent: _batteryCurrent,
+      throttle:       _throttle,
       groundSpeed:    _groundSpeed,
       altitude:       _altitude,
       relativeAlt:    _relativeAlt,
