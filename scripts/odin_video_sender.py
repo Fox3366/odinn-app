@@ -29,7 +29,9 @@ from ultralytics import YOLO
 
 # ---------- Ayarlar ----------
 LISTEN_PORT   = 5600
-CHUNK_SIZE    = 1400
+# Tailscale MTU'su genelde 1280 byte'tır. Parçalanmayı (fragmentation) 
+# ve paket kaybını önlemek için CHUNK_SIZE'ı küçültüyoruz.
+CHUNK_SIZE    = 1100 
 TARGET_FPS    = 15
 JPEG_QUALITY  = 65
 CONFIDENCE    = 0.40
@@ -130,12 +132,35 @@ def main():
     parser = argparse.ArgumentParser(description="ODİN YOLO Video Sender")
     parser.add_argument("--source", default="0", help="Kamera index veya video path")
     parser.add_argument("--show-preview", action="store_true", help="PC'de önizleme göster")
+    parser.add_argument("--fps", type=int, default=TARGET_FPS, help="Hedef FPS")
+    parser.add_argument("--quality", type=int, default=JPEG_QUALITY, help="JPEG kalitesi (0-100)")
+    parser.add_argument("--scale", type=float, default=1.0, help="Göndermeden önce çözünürlüğü küçült (örn: 0.5)")
     args = parser.parse_args()
 
     # YOLO Modeli (ilk seferde otomatik indirilir)
     print("[ODİN] YOLOv8n modeli yükleniyor...")
     model = YOLO("yolov8n.pt")
     print("[ODİN] Model hazır!")
+
+    def get_local_ips():
+        ips = []
+        try:
+            for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+                ips.append(ip)
+        except:
+            pass
+        return ips
+
+    local_ips = get_local_ips()
+    ts_ips = [ip for ip in local_ips if ip.startswith("100.")]
+    print("\n" + "="*40)
+    print("ODİN VİDEO SENDER BAŞLATILDI")
+    if ts_ips:
+        print(f"✅ Tailscale IP Adresiniz (Telefona bunu girin): {ts_ips[0]}")
+    else:
+        print("⚠️ Tailscale IP'si (100.x.x.x) bulunamadı. VPN'in açık olduğundan emin olun.")
+    print("Mevcut tüm IP adresleriniz:", ", ".join(local_ips) if local_ips else "Bilinmiyor")
+    print("="*40 + "\n")
 
     source = int(args.source) if args.source.isdigit() else args.source
     cap = cv2.VideoCapture(source)
@@ -150,8 +175,8 @@ def main():
     threading.Thread(target=discovery_listener, args=(sock,), daemon=True).start()
 
     frame_id = 0
-    interval = 1.0 / TARGET_FPS
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+    interval = 1.0 / args.fps
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, args.quality]
 
     while True:
         t0 = time.monotonic()
@@ -179,6 +204,11 @@ def main():
                 cv2.imshow("ODİN - YOLO", processed)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+
+            # İsteğe bağlı çözünürlük düşürme (Hızı artırır)
+            if args.scale != 1.0:
+                h, w = processed.shape[:2]
+                processed = cv2.resize(processed, (int(w * args.scale), int(h * args.scale)), interpolation=cv2.INTER_LINEAR)
 
             # Encode ve gönder
             ok, jpeg_buf = cv2.imencode(".jpg", processed, encode_params)

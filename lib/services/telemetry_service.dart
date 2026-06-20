@@ -83,7 +83,18 @@ class TelemetryService {
 
     if (msg is VfrHud) {
       _groundSpeed = msg.groundspeed; // m/s
-      _throttle    = msg.throttle;    // %
+      
+      int thr = msg.throttle;
+      // Eğer FC yanlışlıkla % yerine Raw PWM (örn: 1000-2000) gönderiyorsa:
+      if (thr >= 900 && thr <= 2200) {
+        thr = ((thr - 1000) / 10).round().clamp(0, 100);
+      } else if (thr > 100) {
+        // -1 (65535) veya başka saçma bir değer geldiyse
+        thr = 0;
+      } else if (thr < 0) {
+        thr = 0;
+      }
+      _throttle = thr;
     }
 
     if (msg is GpsRawInt) {
