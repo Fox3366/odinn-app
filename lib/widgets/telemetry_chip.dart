@@ -23,7 +23,7 @@ class TelemetryChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.bg,
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -44,7 +44,7 @@ class TelemetryChip extends StatelessWidget {
           Text(
             unit,
             style: TextStyle(
-              color: color.withOpacity(0.6),
+              color: color.withValues(alpha: 0.6),
               fontSize: 8,
               letterSpacing: 0.5,
             ),

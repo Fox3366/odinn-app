@@ -49,7 +49,7 @@ class _OrbitDialogState extends State<OrbitDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: AppColors.cyan.withOpacity(0.5)),
+        side: BorderSide(color: AppColors.cyan.withValues(alpha: 0.5)),
       ),
       child: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -62,8 +62,8 @@ class _OrbitDialogState extends State<OrbitDialog> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.cyan.withOpacity(0.1),
-              border: Border.all(color: AppColors.cyan.withOpacity(0.3)),
+              color: AppColors.cyan.withValues(alpha: 0.1),
+              border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
             ),
             child: const Icon(Icons.rotate_right, color: AppColors.cyan, size: 28),
           ),
@@ -80,7 +80,7 @@ class _OrbitDialogState extends State<OrbitDialog> {
           ),
           const SizedBox(height: 6),
           Text('Varsayılan: ${widget.defaultRadius.toStringAsFixed(0)}m',
-            style: TextStyle(color: AppColors.grey.withOpacity(0.6), fontSize: 10),
+            style: TextStyle(color: AppColors.grey.withValues(alpha: 0.6), fontSize: 10),
           ),
           const SizedBox(height: 16),
 
@@ -98,9 +98,9 @@ class _OrbitDialogState extends State<OrbitDialog> {
             ),
             decoration: InputDecoration(
               hintText: '50',
-              hintStyle: TextStyle(color: AppColors.grey.withOpacity(0.3), fontSize: 24),
+              hintStyle: TextStyle(color: AppColors.grey.withValues(alpha: 0.3), fontSize: 24),
               suffixText: 'm',
-              suffixStyle: TextStyle(color: AppColors.cyan.withOpacity(0.7), fontSize: 14),
+              suffixStyle: TextStyle(color: AppColors.cyan.withValues(alpha: 0.7), fontSize: 14),
               filled: true,
               fillColor: AppColors.bg,
               border: OutlineInputBorder(
@@ -112,7 +112,7 @@ class _OrbitDialogState extends State<OrbitDialog> {
                 borderRadius: BorderRadius.circular(3),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: AppColors.cyan.withOpacity(0.6)),
+                borderSide: BorderSide(color: AppColors.cyan.withValues(alpha: 0.6)),
                 borderRadius: BorderRadius.circular(3),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -129,7 +129,7 @@ class _OrbitDialogState extends State<OrbitDialog> {
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.grey.withOpacity(0.5)),
+                    border: Border.all(color: AppColors.grey.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: const Center(
@@ -147,8 +147,8 @@ class _OrbitDialogState extends State<OrbitDialog> {
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.cyan.withOpacity(0.15),
-                    border: Border.all(color: AppColors.cyan.withOpacity(0.5)),
+                    color: AppColors.cyan.withValues(alpha: 0.15),
+                    border: Border.all(color: AppColors.cyan.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: const Center(

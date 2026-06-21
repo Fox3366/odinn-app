@@ -43,7 +43,7 @@ class PreflightChecklistDialog extends StatelessWidget {
           border: Border.all(color: allOk ? AppColors.green : AppColors.amber),
           borderRadius: BorderRadius.circular(4),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -84,7 +84,7 @@ class PreflightChecklistDialog extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(true),
                     style: TextButton.styleFrom(
-                      backgroundColor: allOk ? AppColors.green.withOpacity(0.2) : AppColors.red.withOpacity(0.2),
+                      backgroundColor: allOk ? AppColors.green.withValues(alpha: 0.2) : AppColors.red.withValues(alpha: 0.2),
                       foregroundColor: allOk ? AppColors.green : AppColors.red,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -111,7 +111,7 @@ class PreflightChecklistDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.bg,
-        border: Border.all(color: isOk ? AppColors.green.withOpacity(0.3) : AppColors.red.withOpacity(0.3)),
+        border: Border.all(color: isOk ? AppColors.green.withValues(alpha: 0.3) : AppColors.red.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Row(

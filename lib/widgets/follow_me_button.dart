@@ -38,10 +38,10 @@ class _FollowMeButtonState extends State<FollowMeButton> with SingleTickerProvid
           duration: const Duration(milliseconds: 200),
           height: 76,
           decoration: BoxDecoration(
-            color: widget.active ? AppColors.red.withOpacity(0.12) : Colors.transparent,
+            color: widget.active ? AppColors.red.withValues(alpha: 0.12) : Colors.transparent,
             border: Border.all(color: c, width: widget.active ? 1.5 : 1),
             borderRadius: BorderRadius.circular(3),
-            boxShadow: widget.active ? [BoxShadow(color: AppColors.red.withOpacity(0.2), blurRadius: 12)] : [],
+            boxShadow: widget.active ? [BoxShadow(color: AppColors.red.withValues(alpha: 0.2), blurRadius: 12)] : [],
           ),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(widget.active ? Icons.person_pin_circle : Icons.person_pin_circle_outlined,
@@ -55,7 +55,7 @@ class _FollowMeButtonState extends State<FollowMeButton> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: (widget.active ? AppColors.red : AppColors.grey).withOpacity(0.1),
+                color: (widget.active ? AppColors.red : AppColors.grey).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
               child: Text(widget.active ? '● AKTİF' : '○ PASİF',

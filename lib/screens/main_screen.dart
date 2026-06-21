@@ -28,6 +28,7 @@ import '../widgets/telemetry_bar.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/takeoff_dialog.dart';
 import '../widgets/preflight_checklist_dialog.dart';
+import 'mission_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -417,7 +418,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         margin: const EdgeInsets.all(12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: color.withOpacity(0.4)),
+          side: BorderSide(color: color.withValues(alpha: 0.4)),
         ),
         content: Row(children: [
           Icon(icon, color: color, size: 15),
@@ -502,7 +503,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         controller: _tabCtrl,
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
-          color: AppColors.red.withOpacity(0.12),
+          color: AppColors.red.withValues(alpha: 0.12),
           border: Border(bottom: BorderSide(color: AppColors.red, width: 2)),
         ),
         labelColor: AppColors.red,
@@ -550,6 +551,21 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               onMissionStart: _onMissionStart,
               onTransition:   _onTransition,
             ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MissionScreen())),
+              icon: const Icon(Icons.map, color: Colors.white),
+              label: const Text('HARİTA VE GÖREV PLANLAYICI', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.cyan.withValues(alpha: 0.15),
+                foregroundColor: AppColors.cyan,
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  side: BorderSide(color: AppColors.cyan.withValues(alpha: 0.5)),
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
             _buildFooter(),
           ]),
@@ -586,7 +602,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: const Color(0xFF0A0A0A),
           border: Border.all(
-            color: (_videoConnected ? AppColors.green : AppColors.red).withOpacity(
+            color: (_videoConnected ? AppColors.green : AppColors.red).withValues(alpha: 
               _videoConnected ? 0.45 : 0.35,
             ),
           ),
@@ -622,7 +638,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              border: Border.all(color: AppColors.red.withOpacity(0.5)),
+              border: Border.all(color: AppColors.red.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Icon(Icons.fullscreen_exit, color: AppColors.red, size: 20),
@@ -632,7 +648,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           child: Center(
             child: Text('KÜÇÜLTMEK İÇİN DOKUN',
                 style: TextStyle(
-                  color: AppColors.grey.withOpacity(0.5),
+                  color: AppColors.grey.withValues(alpha: 0.5),
                   fontSize: 9, letterSpacing: 3,
                 )),
           ),
@@ -644,9 +660,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget _buildFooter() {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text('ODİN  v2.0.0',
-          style: TextStyle(color: AppColors.grey.withOpacity(0.3), fontSize: 9, letterSpacing: 2)),
+          style: TextStyle(color: AppColors.grey.withValues(alpha: 0.3), fontSize: 9, letterSpacing: 2)),
       Text('RAVENS OF THE SKY',
-          style: TextStyle(color: AppColors.grey.withOpacity(0.2), fontSize: 9, letterSpacing: 2)),
+          style: TextStyle(color: AppColors.grey.withValues(alpha: 0.2), fontSize: 9, letterSpacing: 2)),
     ]);
   }
 }

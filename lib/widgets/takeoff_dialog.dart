@@ -48,7 +48,7 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: AppColors.green.withOpacity(0.5)),
+        side: BorderSide(color: AppColors.green.withValues(alpha: 0.5)),
       ),
       child: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -61,8 +61,8 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.green.withOpacity(0.1),
-              border: Border.all(color: AppColors.green.withOpacity(0.3)),
+              color: AppColors.green.withValues(alpha: 0.1),
+              border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
             ),
             child: const Icon(Icons.flight_takeoff, color: AppColors.green, size: 28),
           ),
@@ -79,7 +79,7 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
           ),
           const SizedBox(height: 6),
           Text('Varsayılan: ${widget.defaultAltitude.toStringAsFixed(0)}m',
-            style: TextStyle(color: AppColors.grey.withOpacity(0.6), fontSize: 10),
+            style: TextStyle(color: AppColors.grey.withValues(alpha: 0.6), fontSize: 10),
           ),
           const SizedBox(height: 16),
 
@@ -97,9 +97,9 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
             ),
             decoration: InputDecoration(
               hintText: '10',
-              hintStyle: TextStyle(color: AppColors.grey.withOpacity(0.3), fontSize: 24),
+              hintStyle: TextStyle(color: AppColors.grey.withValues(alpha: 0.3), fontSize: 24),
               suffixText: 'm',
-              suffixStyle: TextStyle(color: AppColors.green.withOpacity(0.7), fontSize: 14),
+              suffixStyle: TextStyle(color: AppColors.green.withValues(alpha: 0.7), fontSize: 14),
               filled: true,
               fillColor: AppColors.bg,
               border: OutlineInputBorder(
@@ -111,7 +111,7 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
                 borderRadius: BorderRadius.circular(3),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: AppColors.green.withOpacity(0.6)),
+                borderSide: BorderSide(color: AppColors.green.withValues(alpha: 0.6)),
                 borderRadius: BorderRadius.circular(3),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -128,7 +128,7 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.grey.withOpacity(0.5)),
+                    border: Border.all(color: AppColors.grey.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: const Center(
@@ -146,8 +146,8 @@ class _TakeoffDialogState extends State<TakeoffDialog> {
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.green.withOpacity(0.15),
-                    border: Border.all(color: AppColors.green.withOpacity(0.5)),
+                    color: AppColors.green.withValues(alpha: 0.15),
+                    border: Border.all(color: AppColors.green.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: const Center(

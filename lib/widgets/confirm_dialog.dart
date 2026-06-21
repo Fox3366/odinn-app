@@ -44,7 +44,7 @@ class ConfirmDialog extends StatelessWidget {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: accentColor.withOpacity(0.5)),
+        side: BorderSide(color: accentColor.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -54,8 +54,8 @@ class ConfirmDialog extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: accentColor.withOpacity(0.1),
-              border: Border.all(color: accentColor.withOpacity(0.3)),
+              color: accentColor.withValues(alpha: 0.1),
+              border: Border.all(color: accentColor.withValues(alpha: 0.3)),
             ),
             child: Icon(icon, color: accentColor, size: 28),
           ),
@@ -128,8 +128,8 @@ class _DialogButton extends StatelessWidget {
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: filled ? color.withOpacity(0.15) : Colors.transparent,
-          border: Border.all(color: color.withOpacity(0.5)),
+          color: filled ? color.withValues(alpha: 0.15) : Colors.transparent,
+          border: Border.all(color: color.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Center(

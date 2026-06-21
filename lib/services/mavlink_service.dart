@@ -140,7 +140,7 @@ class MavlinkService {
   // ─── Komut API'si ─────────────────────────────────────────────────────────
 
   void sendHeartbeat() {
-    _send(Heartbeat(
+    sendMessage(Heartbeat(
       type: 6, autopilot: 8, baseMode: 0,
       customMode: 0, systemStatus: 4, mavlinkVersion: 3,
     ));
@@ -155,7 +155,7 @@ class MavlinkService {
   /// Takeoff — verilen irtifaya kalkış
   void sendTakeoff(double altitude) {
     if (droneSystemId == null) return;
-    _send(CommandLong(
+    sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 22, confirmation: 0,
       param1: 0, param2: 0, param3: 0, param4: double.nan,
@@ -184,7 +184,7 @@ class MavlinkService {
 
   void sendOrbit({double radius = 50.0}) {
     if (droneSystemId == null) return;
-    _send(CommandLong(
+    sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 34, confirmation: 0,
       param1: radius,     // Yarıçap (metre)
@@ -199,7 +199,7 @@ class MavlinkService {
 
   void sendReposition(double lat, double lon, double alt) {
     if (droneSystemId == null) return;
-    _send(CommandLong(
+    sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 192, confirmation: 0,
       param1: -1,  param2: 1,
@@ -212,7 +212,7 @@ class MavlinkService {
     // timestamp ms cinsinden olmalıdır (time_boot_ms standardı)
     // estCapabilities=1 → konum alanı güvenilir
     // attitudeQ identity quaternion [1,0,0,0]
-    _send(FollowTarget(
+    sendMessage(FollowTarget(
       timestamp:       DateTime.now().millisecondsSinceEpoch,
       estCapabilities: 1,
       lat: (lat * 1e7).toInt(),
@@ -231,7 +231,7 @@ class MavlinkService {
 
   void _sendCommand(int cmd, {double p1 = 0, double p2 = 0}) {
     if (droneSystemId == null) return;
-    _send(CommandLong(
+    sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: cmd, confirmation: 0,
       param1: p1, param2: p2,
@@ -243,7 +243,7 @@ class MavlinkService {
   /// param2=mainMode, param3=subMode
   void _setPx4Mode(int mainMode, int subMode) {
     if (droneSystemId == null) return;
-    _send(CommandLong(
+    sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 176, confirmation: 0,
       param1: 1, param2: mainMode.toDouble(), param3: subMode.toDouble(),
@@ -251,7 +251,7 @@ class MavlinkService {
     ));
   }
 
-  void _send(MavlinkMessage msg) {
+  void sendMessage(MavlinkMessage msg) {
     final frame = MavlinkFrame.v2(_sequence, _systemId, _componentId, msg);
     _udp.send(frame.serialize(), _host, _port);
     _sequence = (_sequence + 1) & 0xFF;

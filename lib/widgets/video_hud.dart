@@ -69,9 +69,9 @@ class VideoHud extends StatelessWidget {
         top: 8, left: 10, right: 10,
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('LAT: ${lat.toStringAsFixed(5)}  LON: ${lon.toStringAsFixed(5)}',
-              style: TextStyle(color: AppColors.red.withOpacity(0.85), fontSize: 8, letterSpacing: 1, fontFamily: 'monospace')),
+              style: TextStyle(color: AppColors.red.withValues(alpha: 0.85), fontSize: 8, letterSpacing: 1, fontFamily: 'monospace')),
           Text('ALT: ${alt.toStringAsFixed(1)}m',
-              style: TextStyle(color: AppColors.red.withOpacity(0.85), fontSize: 8, letterSpacing: 1, fontFamily: 'monospace')),
+              style: TextStyle(color: AppColors.red.withValues(alpha: 0.85), fontSize: 8, letterSpacing: 1, fontFamily: 'monospace')),
         ]),
       ),
 
@@ -83,7 +83,7 @@ class VideoHud extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.black54,
             borderRadius: BorderRadius.circular(2),
-            border: Border.all(color: (videoConnected ? AppColors.green : AppColors.grey).withOpacity(0.4)),
+            border: Border.all(color: (videoConnected ? AppColors.green : AppColors.grey).withValues(alpha: 0.4)),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 5, height: 5, decoration: BoxDecoration(

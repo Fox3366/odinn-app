@@ -176,9 +176,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 builder: (_, __) => Container(
                   width: 7, height: 7,
                   decoration: BoxDecoration(
-                    color: AppColors.red.withOpacity(_pulse.value),
+                    color: AppColors.red.withValues(alpha: _pulse.value),
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: AppColors.red.withOpacity(0.6), blurRadius: 6)],
+                    boxShadow: [BoxShadow(color: AppColors.red.withValues(alpha: 0.6), blurRadius: 6)],
                   ),
                 ),
               ),

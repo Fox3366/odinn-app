@@ -14,8 +14,8 @@ class TopBar extends StatelessWidget {
       height: 58,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.95),
-        border: Border(bottom: BorderSide(color: AppColors.red.withOpacity(0.4))),
+        color: AppColors.surface.withValues(alpha: 0.95),
+        border: Border(bottom: BorderSide(color: AppColors.red.withValues(alpha: 0.4))),
       ),
       child: Row(children: [
         const Icon(Icons.flight, color: AppColors.red, size: 18),
@@ -34,8 +34,8 @@ class TopBar extends StatelessWidget {
           builder: (_, __) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.08),
-              border: Border.all(color: statusColor.withOpacity(0.4)),
+              color: statusColor.withValues(alpha: 0.08),
+              border: Border.all(color: statusColor.withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Row(children: [
@@ -43,8 +43,8 @@ class TopBar extends StatelessWidget {
                 width: 7, height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: statusColor.withOpacity(pulse.value),
-                  boxShadow: [BoxShadow(color: statusColor.withOpacity(0.7), blurRadius: 8)],
+                  color: statusColor.withValues(alpha: pulse.value),
+                  boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.7), blurRadius: 8)],
                 ),
               ),
               const SizedBox(width: 6),

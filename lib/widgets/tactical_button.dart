@@ -46,10 +46,10 @@ class _TacticalButtonState extends State<TacticalButton> with SingleTickerProvid
           duration: const Duration(milliseconds: 150),
           height: 76,
           decoration: BoxDecoration(
-            color: _pressed ? widget.color.withOpacity(0.1) : Colors.transparent,
+            color: _pressed ? widget.color.withValues(alpha: 0.1) : Colors.transparent,
             border: Border.all(color: _pressed ? widget.color : AppColors.greyD, width: _pressed ? 1.5 : 1),
             borderRadius: BorderRadius.circular(3),
-            boxShadow: _pressed ? [BoxShadow(color: widget.color.withOpacity(0.25), blurRadius: 10)] : [],
+            boxShadow: _pressed ? [BoxShadow(color: widget.color.withValues(alpha: 0.25), blurRadius: 10)] : [],
           ),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(widget.icon, color: widget.color, size: 24),

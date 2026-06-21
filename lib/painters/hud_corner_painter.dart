@@ -18,7 +18,7 @@ class HudCornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color      = color.withOpacity(opacity)
+      ..color      = color.withValues(alpha: opacity)
       ..strokeWidth = strokeWidth
       ..style      = PaintingStyle.stroke;
     final l = cornerLen;

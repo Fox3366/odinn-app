@@ -19,7 +19,7 @@ class BgScanPainter extends CustomPainter {
       Rect.fromLTWH(0, scanY - 60, size.width, 120),
       Paint()..shader = LinearGradient(
         begin: Alignment.topCenter, end: Alignment.bottomCenter,
-        colors: [Colors.transparent, red.withOpacity(0.025), red.withOpacity(0.04), red.withOpacity(0.025), Colors.transparent],
+        colors: [Colors.transparent, red.withValues(alpha: 0.025), red.withValues(alpha: 0.04), red.withValues(alpha: 0.025), Colors.transparent],
       ).createShader(Rect.fromLTWH(0, scanY - 60, size.width, 120)),
     );
   }

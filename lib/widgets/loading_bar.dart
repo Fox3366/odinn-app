@@ -36,14 +36,14 @@ class _LoadingBarState extends State<LoadingBar> with SingleTickerProviderStateM
           ]),
           const SizedBox(height: 6),
           Stack(children: [
-            Container(height: 2, color: AppColors.grey.withOpacity(0.2)),
+            Container(height: 2, color: AppColors.grey.withValues(alpha: 0.2)),
             FractionallySizedBox(
               widthFactor: _fill.value,
               child: Container(
                 height: 2,
                 decoration: BoxDecoration(
                   color: AppColors.red,
-                  boxShadow: [BoxShadow(color: AppColors.red.withOpacity(0.6), blurRadius: 6)],
+                  boxShadow: [BoxShadow(color: AppColors.red.withValues(alpha: 0.6), blurRadius: 6)],
                 ),
               ),
             ),

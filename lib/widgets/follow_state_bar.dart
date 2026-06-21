@@ -38,7 +38,7 @@ class FollowStateBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = _color(currentState).withOpacity(0.4);
+    final borderColor = _color(currentState).withValues(alpha: 0.4);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(

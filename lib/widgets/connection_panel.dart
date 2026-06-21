@@ -36,12 +36,12 @@ class ConnectionPanel extends StatelessWidget {
         style: const TextStyle(color: AppColors.white, fontSize: 13, letterSpacing: 1),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: AppColors.grey.withOpacity(0.3), fontSize: 12),
+          hintStyle: TextStyle(color: AppColors.grey.withValues(alpha: 0.3), fontSize: 12),
           prefixIcon: Icon(icon, color: AppColors.grey, size: 15),
           filled: true, fillColor: AppColors.bg,
           border:        OutlineInputBorder(borderSide: BorderSide(color: AppColors.greyD), borderRadius: BorderRadius.circular(3)),
           enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.greyD), borderRadius: BorderRadius.circular(3)),
-          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.red.withOpacity(0.6)), borderRadius: BorderRadius.circular(3)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.red.withValues(alpha: 0.6)), borderRadius: BorderRadius.circular(3)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         ),
       ),
@@ -71,8 +71,8 @@ class ConnectionPanel extends StatelessWidget {
           child: Container(
             width: double.infinity, height: 46,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [AppColors.red.withOpacity(0.15), Colors.transparent], begin: Alignment.centerLeft),
-              border: Border.all(color: AppColors.red.withOpacity(0.5)),
+              gradient: LinearGradient(colors: [AppColors.red.withValues(alpha: 0.15), Colors.transparent], begin: Alignment.centerLeft),
+              border: Border.all(color: AppColors.red.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(3),
             ),
             child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [

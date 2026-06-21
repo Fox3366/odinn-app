@@ -98,11 +98,11 @@ class _FlightSettingsPanelState extends State<FlightSettingsPanel> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: AppColors.grey, size: 15),
           suffixText: unit,
-          suffixStyle: TextStyle(color: AppColors.grey.withOpacity(0.5), fontSize: 11),
+          suffixStyle: TextStyle(color: AppColors.grey.withValues(alpha: 0.5), fontSize: 11),
           filled: true, fillColor: AppColors.bg,
           border:        OutlineInputBorder(borderSide: BorderSide(color: AppColors.greyD), borderRadius: BorderRadius.circular(3)),
           enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.greyD), borderRadius: BorderRadius.circular(3)),
-          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.red.withOpacity(0.6)), borderRadius: BorderRadius.circular(3)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.red.withValues(alpha: 0.6)), borderRadius: BorderRadius.circular(3)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         ),
       ),
@@ -149,8 +149,8 @@ class _FlightSettingsPanelState extends State<FlightSettingsPanel> {
           child: Container(
             width: double.infinity, height: 46,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [AppColors.red.withOpacity(0.15), Colors.transparent], begin: Alignment.centerLeft),
-              border: Border.all(color: AppColors.red.withOpacity(0.5)),
+              gradient: LinearGradient(colors: [AppColors.red.withValues(alpha: 0.15), Colors.transparent], begin: Alignment.centerLeft),
+              border: Border.all(color: AppColors.red.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(3),
             ),
             child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
