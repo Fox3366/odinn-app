@@ -70,35 +70,47 @@ class TelemetryService {
     final msg = frame.message;
 
     if (msg is SysStatus) {
-      _batteryVoltage = msg.voltageBattery / 1000.0; // mV → V
+      // QGC Mantığı: Voltaj bilinmiyorsa (UINT16_MAX) 65535 gelir.
+      _batteryVoltage = msg.voltageBattery == 65535 ? -1.0 : (msg.voltageBattery / 1000.0); // mV → V
       _batteryPercent = msg.batteryRemaining;         // -1 bilinmiyor
-      _batteryCurrent = msg.currentBattery >= 0 ? msg.currentBattery / 100.0 : -1.0; // cA → A
+      
+      int current = msg.currentBattery;
+      if (current > 32767) current -= 65536; // int16_t cast
+      _batteryCurrent = (current == -1) ? -1.0 : (current / 100.0); // cA → A
     }
 
     if (msg is GlobalPositionInt) {
       _altitude    = msg.alt / 1000.0;          // mm → m
       _relativeAlt = msg.relativeAlt / 1000.0;  // mm → m
-      _heading     = msg.hdg / 100.0;            // cdeg → deg
+      // Eğer Attitude mesajı alamıyorsak yedek olarak hdg kullanalım, 65535 bilinmiyor demek.
+      if (msg.hdg != 65535) {
+        _heading = msg.hdg / 100.0;            // cdeg → deg
+      }
+    }
+
+    if (msg is Attitude) {
+      // QGC Mantığı (VehicleFactGroup.cc): yaw radyanı dereceye çevrilir, < 0 ise 360 eklenir ve ondalık kesilir (trunc).
+      double yawDeg = msg.yaw * (180.0 / 3.141592653589793);
+      if (yawDeg < 0.0) {
+        yawDeg += 360.0;
+      }
+      _heading = yawDeg.truncateToDouble();
     }
 
     if (msg is VfrHud) {
       _groundSpeed = msg.groundspeed; // m/s
       
       int thr = msg.throttle;
-      // Eğer FC yanlışlıkla % yerine Raw PWM (örn: 1000-2000) gönderiyorsa:
-      if (thr >= 900 && thr <= 2200) {
-        thr = ((thr - 1000) / 10).round().clamp(0, 100);
-      } else if (thr > 100) {
-        // -1 (65535) veya başka saçma bir değer geldiyse
-        thr = 0;
-      } else if (thr < 0) {
-        thr = 0;
-      }
+      // QGC Mantığı: Throttle değeri doğrudan % (0-100) olarak int16_t şeklinde gelir.
+      // Herhangi bir PWM hesaplaması yapılmaz. Uint16 parse edildiyse cast ediyoruz.
+      if (thr > 32767) thr -= 65536; 
+      
       _throttle = thr;
     }
 
     if (msg is GpsRawInt) {
-      _satelliteCount = msg.satellitesVisible;
+      // QGC Mantığı: Uydu sayısı bilinmiyorsa (UINT8_MAX) 255 gelir.
+      _satelliteCount = msg.satellitesVisible == 255 ? -1 : msg.satellitesVisible;
       _gpsFixType     = msg.fixType;
     }
 
