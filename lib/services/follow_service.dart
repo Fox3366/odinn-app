@@ -39,6 +39,9 @@ class FollowService {
   bool        _active     = false;
   bool        _transitioning = false;
   
+  // İrtifa koruması (SITL/Emülatör için)
+  double _lockedFollowAlt = 0.0;
+
   // Spam önleme
   double _lastSentLat = 0.0;
   double _lastSentLon = 0.0;
@@ -71,6 +74,15 @@ class FollowService {
     _isFwSent      = false;
     _lastSentLat   = 0.0;
     _lastSentLon   = 0.0;
+    
+    // SITL/Emülatör koruması: Telefon GPS'i çok düşük (örn 0m) ise ve drone 50m'den yüksekse drone'un irtifasını kilitle
+    if (_gcsAlt < 10.0 && _mavlink.droneAltAmsl > 50.0) {
+      _lockedFollowAlt = _mavlink.droneAltAmsl;
+      debugPrint('⚠️ SITL/Emülatör algılandı: İrtifa kilitlendi -> $_lockedFollowAlt');
+    } else {
+      _lockedFollowAlt = _gcsAlt;
+    }
+
     _setState(FollowState.approaching);
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -169,7 +181,7 @@ class FollowService {
     _mavlink.sendFollowTarget(
       lat: _gcsLat,
       lon: _gcsLon,
-      alt: _gcsAlt, // _followAlt değil, kesinlikle cihazın mutlak AMSL irtifası!
+      alt: _lockedFollowAlt, // _gcsAlt yerine güvenli kilitlenmiş irtifa!
       vel: [vx, vy, 0.0],
       posCov: [_gcsAccH, _gcsAccH, _gcsAccV],
       estCapabilities: estCap,

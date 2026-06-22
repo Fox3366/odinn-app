@@ -317,6 +317,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   void _onOrbit(double radius) {
     if (!_requireConnection()) return;
+    if (!_droneTelemetry.isArmed) {
+      _snack('HATA: Araç ARM edilmeden orbit komutu verilemez!', Icons.error, AppColors.red);
+      return;
+    }
     HapticFeedback.heavyImpact();
     setState(() {
       _followActive = false;
@@ -353,6 +357,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       defaultAltitude: _flightSettings.defaultTakeoffAlt,
     );
     if (alt == null || !mounted) return;
+
+    // ARM Kontrolü ve Otomatik ARM
+    if (!_droneTelemetry.isArmed) {
+      _snack('Araç otomatik ARM ediliyor...', Icons.security, AppColors.amber);
+      _mavlink.sendArmDisarm(true);
+      await Future.delayed(const Duration(milliseconds: 500)); // Arm olmasını bekle
+    }
+
     HapticFeedback.heavyImpact();
     setState(() => _isCommandPending = true);
     _mavlink.sendTakeoff(alt);
