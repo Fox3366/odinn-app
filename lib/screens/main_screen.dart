@@ -127,7 +127,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     await _location.startListening(
       onPosition: (Position p) {
-        _follow.updateGcsPosition(p.latitude, p.longitude, p.altitude);
+        _follow.updateGcsPosition(p);
         _telemetry.updateGcsPosition(p.latitude, p.longitude);
         if (mounted) {
           setState(() {

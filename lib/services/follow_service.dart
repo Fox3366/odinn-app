@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-
+import 'package:geolocator/geolocator.dart';
 import '../models/follow_state.dart';
 import '../models/flight_settings.dart';
 import 'mavlink_service.dart';
@@ -29,7 +29,11 @@ class FollowService {
   // GCS (telefon) konumu — LocationService callback'i tarafından güncellenir
   double _gcsLat = 0.0;
   double _gcsLon = 0.0;
-  double _gcsAlt = 0.0;
+  double _gcsAlt = 0.0; // AMSL irtifa
+  double _gcsHeading = 0.0;
+  double _gcsSpeed = 0.0;
+  double _gcsAccH = 0.0; // Yatay hassasiyet
+  double _gcsAccV = 0.0; // Dikey hassasiyet
 
   FollowState _state      = FollowState.idle;
   bool        _active     = false;
@@ -47,10 +51,14 @@ class FollowService {
   FollowState         get currentState  => _state;
 
   /// Ana ekrandan GPS güncellemesi alır.
-  void updateGcsPosition(double lat, double lon, double alt) {
-    _gcsLat = lat;
-    _gcsLon = lon;
-    _gcsAlt = alt;
+  void updateGcsPosition(Position p) {
+    _gcsLat = p.latitude;
+    _gcsLon = p.longitude;
+    _gcsAlt = p.altitude;
+    _gcsHeading = p.heading; // 0.0 - 359.9
+    _gcsSpeed = p.speed; // m/s
+    _gcsAccH = p.accuracy;
+    _gcsAccV = p.altitudeAccuracy;
   }
 
   void start() {
@@ -142,7 +150,30 @@ class FollowService {
   }
 
   void _handleFollowing(double dist) {
-    _mavlink.sendFollowTarget(_gcsLat, _gcsLon, _followAlt);
+    // QGC Mantığı: vx, vy hesapla
+    double vx = 0.0;
+    double vy = 0.0;
+    int estCap = 1; // 1 << 0 (POS)
+    
+    if (_gcsSpeed > 0.0) {
+      estCap |= (1 << 1); // 1 << 1 (VEL)
+      final dirRad = _gcsHeading * (math.pi / 180.0);
+      vx = math.cos(dirRad) * _gcsSpeed;
+      vy = math.sin(dirRad) * _gcsSpeed;
+    }
+    
+    if (_gcsHeading >= 0.0) {
+      estCap |= (1 << 2); // 1 << 2 (HEADING)
+    }
+
+    _mavlink.sendFollowTarget(
+      lat: _gcsLat,
+      lon: _gcsLon,
+      alt: _gcsAlt, // _followAlt değil, kesinlikle cihazın mutlak AMSL irtifası!
+      vel: [vx, vy, 0.0],
+      posCov: [_gcsAccH, _gcsAccH, _gcsAccV],
+      estCapabilities: estCap,
+    );
 
     if (dist > thresholdFarM * 1.5) {
       debugPrint('⚠️ Mesafe çok arttı, approaching moduna dönülüyor...');

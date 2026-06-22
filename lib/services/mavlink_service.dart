@@ -32,6 +32,7 @@ class MavlinkService {
   /// Drone'un son bilinen konumu — FollowService tarafından okunur.
   double droneLat = 0.0;
   double droneLon = 0.0;
+  double droneAltAmsl = 0.0;
 
   // --- Bağlantı stream ---
   final _connCtrl = StreamController<bool>.broadcast();
@@ -46,6 +47,8 @@ class MavlinkService {
   // --- Raw frame stream (TelemetryService tarafından dinlenir) ---
   final _rawFrameCtrl = StreamController<MavlinkFrame>.broadcast();
   Stream<MavlinkFrame> get rawFrameStream => _rawFrameCtrl.stream;
+
+  final Stopwatch _uptime = Stopwatch()..start();
 
   Timer? _keepAliveTimer;
   Timer? _timeoutTimer;
@@ -87,6 +90,7 @@ class MavlinkService {
       final pos = frame.message as GlobalPositionInt;
       droneLat = pos.lat / 1e7;
       droneLon = pos.lon / 1e7;
+      droneAltAmsl = pos.alt / 1000.0;
     }
     if (frame.message is CommandAck) {
       _handleAck(frame.message as CommandAck);
@@ -158,8 +162,8 @@ class MavlinkService {
     sendMessage(CommandLong(
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 22, confirmation: 0,
-      param1: 0, param2: 0, param3: 0, param4: double.nan,
-      param5: double.nan, param6: double.nan, param7: altitude,
+      param1: -1, param2: 0, param3: 0, param4: double.nan,
+      param5: double.nan, param6: double.nan, param7: droneAltAmsl + altitude,
     ));
   }
 
@@ -188,12 +192,12 @@ class MavlinkService {
       targetSystem: droneSystemId!, targetComponent: droneComponentId!,
       command: 34, confirmation: 0,
       param1: radius,     // Yarıçap (metre)
-      param2: double.nan, // PX4 otomatik seyir hızını kullanır (MPC_XY_CRUISE veya FW_AIRSPD_TRIM)
-      param3: 0.0,  // Yaw behavior (0: front to center)
-      param4: 0.0,
-      param5: double.nan, // Use current lat
-      param6: double.nan, // Use current lon
-      param7: double.nan, // Use current alt
+      param2: double.nan, // PX4 otomatik seyir hızını kullanır
+      param3: 4.0,        // MAV_ORBIT_YAW_BEHAVIOUR_UNCHANGED
+      param4: double.nan, // Varsayılan tur sayısı
+      param5: droneLat != 0.0 ? droneLat : double.nan,
+      param6: droneLon != 0.0 ? droneLon : double.nan,
+      param7: droneAltAmsl != 0.0 ? droneAltAmsl : double.nan,
     ));
   }
 
@@ -208,21 +212,25 @@ class MavlinkService {
     ));
   }
 
-  void sendFollowTarget(double lat, double lon, double alt) {
-    // timestamp ms cinsinden olmalıdır (time_boot_ms standardı)
-    // estCapabilities=1 → konum alanı güvenilir
-    // attitudeQ identity quaternion [1,0,0,0]
+  void sendFollowTarget({
+    required double lat,
+    required double lon,
+    required double alt,
+    required List<double> vel,
+    required List<double> posCov,
+    required int estCapabilities,
+  }) {
     sendMessage(FollowTarget(
-      timestamp:       DateTime.now().millisecondsSinceEpoch,
-      estCapabilities: 1,
+      timestamp:       _uptime.elapsedMilliseconds,
+      estCapabilities: estCapabilities,
       lat: (lat * 1e7).toInt(),
       lon: (lon * 1e7).toInt(),
-      alt: alt,
-      vel:         Float32List(3),
+      alt: alt, // Doğrudan cihazın AMSL irtifası
+      vel:         Float32List.fromList(vel),
       acc:         Float32List(3),
       attitudeQ:   Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
       rates:       Float32List(3),
-      positionCov: Float32List(3),
+      positionCov: Float32List.fromList(posCov),
       customState: 0,
     ));
   }
