@@ -79,6 +79,23 @@ class TelemetryService {
       _batteryCurrent = (current == -1) ? -1.0 : (current / 100.0); // cA → A
     }
 
+    if (msg is BatteryStatus) {
+      // BATTERY_STATUS mesajı SysStatus'a göre daha hassastır.
+      _batteryVoltage = msg.voltages.isNotEmpty && msg.voltages[0] != 65535 
+          ? (msg.voltages[0] / 1000.0) 
+          : _batteryVoltage;
+      
+      int current = msg.currentBattery;
+      if (current > 32767) current -= 65536;
+      if (current != -1) {
+        _batteryCurrent = current / 100.0; // cA -> A
+      }
+      
+      if (msg.batteryRemaining != -1) {
+        _batteryPercent = msg.batteryRemaining;
+      }
+    }
+
     if (msg is GlobalPositionInt) {
       _altitude    = msg.alt / 1000.0;          // mm → m
       _relativeAlt = msg.relativeAlt / 1000.0;  // mm → m
@@ -105,7 +122,9 @@ class TelemetryService {
       // Herhangi bir PWM hesaplaması yapılmaz. Uint16 parse edildiyse cast ediyoruz.
       if (thr > 32767) thr -= 65536; 
       
-      _throttle = thr;
+      if (thr >= 0 && thr <= 100) {
+        _throttle = thr;
+      }
     }
 
     if (msg is GpsRawInt) {

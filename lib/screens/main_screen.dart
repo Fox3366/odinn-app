@@ -1,21 +1,14 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/app_colors.dart';
 import '../models/follow_state.dart';
 import '../models/flight_settings.dart';
 import '../models/drone_telemetry.dart';
-import '../models/command_result.dart';
-import '../services/mavlink_service.dart';
-import '../services/follow_service.dart';
-import '../services/location_service.dart';
-import '../services/settings_service.dart';
-import '../services/video_service.dart';
-import '../services/telemetry_service.dart';
-import '../services/flight_timer_service.dart';
 import '../painters/bg_scan_painter.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_hud.dart';
@@ -30,46 +23,28 @@ import '../widgets/takeoff_dialog.dart';
 import '../widgets/preflight_checklist_dialog.dart';
 import 'mission_screen.dart';
 
-class MainScreen extends StatefulWidget {
+import 'main_cubit.dart';
+import 'main_state.dart';
+
+class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
+
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => MainCubit(),
+      child: const _MainScreenBody(),
+    );
+  }
 }
 
-class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
-  // --- Servisler ---
-  final _mavlink    = MavlinkService();
-  final _follow     = FollowService();
-  final _location   = LocationService();
-  final _settings   = SettingsService();
-  final _video      = VideoService();
-  final _telemetry  = TelemetryService();
-  final _flightTimer = FlightTimerService();
+class _MainScreenBody extends StatefulWidget {
+  const _MainScreenBody({super.key});
+  @override
+  State<_MainScreenBody> createState() => _MainScreenBodyState();
+}
 
-  // --- Subscription'lar ---
-  StreamSubscription<bool>?          _connSub;
-  StreamSubscription<FollowState>?   _followSub;
-  StreamSubscription<CommandResult>? _ackSub;
-  StreamSubscription<Uint8List>?     _videoSub;
-  StreamSubscription<bool>?          _videoConnSub;
-  StreamSubscription<DroneTelemetry>? _telemetrySub;
-  StreamSubscription<Duration>?      _flightTimerSub;
-
-  // --- UI Durumu ---
-  double      _lat = 0, _lon = 0, _alt = 0;
-  bool        _isConnected    = false;
-  bool        _followActive   = false;
-  bool        _videoConnected = false;
-  bool        _mapFullscreen  = false;
-  FollowState _followState    = FollowState.idle;
-  Uint8List?  _currentFrame;
-  DroneTelemetry _droneTelemetry = const DroneTelemetry();
-  FlightSettings _flightSettings = const FlightSettings();
-  Duration _flightTime = Duration.zero;
-
-  bool _isCommandPending    = false;
-  bool _batteryWarningShown = false;
-
+class _MainScreenBodyState extends State<_MainScreenBody> with TickerProviderStateMixin {
   // --- Controller'lar ---
   final _ipCtrl   = TextEditingController();
   final _portCtrl = TextEditingController();
@@ -85,10 +60,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
-    _loadSettings();
-    _initSystem();
-    _initVideo();
-    _initTelemetry();
     _initAnimations();
   }
 
@@ -106,177 +77,21 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _radarAngle = Tween<double>(begin: 0, end: 2 * pi).animate(_radarCtrl);
   }
 
-  Future<void> _loadSettings() async {
-    final s = await _settings.load();
-    final fs = await _settings.loadFlightSettings();
-    if (!mounted) return;
-    setState(() {
-      _ipCtrl.text    = s.ip;
-      _portCtrl.text  = s.port.toString();
-      _flightSettings = fs;
-    });
-    _mavlink.setTarget(s.ip, s.port);
-    _video.setTarget(s.ip);
-    _follow.applySettings(fs);
-  }
-
-  Future<void> _initSystem() async {
-    await _location.requestPermissions(
-      onWarning: (msg) => _snack(msg, Icons.warning_amber, Colors.orange),
-    );
-
-    await _location.startListening(
-      onPosition: (Position p) {
-        _follow.updateGcsPosition(p);
-        _telemetry.updateGcsPosition(p.latitude, p.longitude);
-        if (mounted) {
-          setState(() {
-            _lat = p.latitude;
-            _lon = p.longitude;
-            _alt = p.altitude;
-          });
-        }
-      },
-      onError: (e) => debugPrint('GPS Hatası: $e'),
-    );
-
-    _isConnected = _mavlink.isConnected;
-    _connSub = _mavlink.connectionStream.listen((v) {
-      if (mounted) {
-        setState(() => _isConnected = v);
-        if (!v) {
-          HapticFeedback.heavyImpact();
-          _snack('BAĞLANTI KOPTU!', Icons.warning, AppColors.red);
-        }
-      }
-    });
-
-    _followState = _follow.currentState;
-    _followSub = _follow.stateStream.listen((s) {
-      if (mounted) {
-        setState(() {
-          _followState = s;
-          if (s == FollowState.idle) _followActive = false;
-        });
-      }
-    });
-
-    _ackSub = _mavlink.commandAckStream.listen((r) {
-      if (!mounted) return;
-      setState(() => _isCommandPending = false);
-      
-      Color color = r.accepted ? AppColors.green : AppColors.red;
-      IconData icon = r.accepted ? Icons.check_circle_outline : Icons.error_outline;
-      if (r.result == 3) {
-        color = AppColors.amber;
-        icon = Icons.timer_off;
-      }
-      
-      _snack('${r.label}: ${r.resultText}', icon, color);
-    });
-  }
-
-  void _initVideo() {
-    _video.setTarget(_ipCtrl.text);
-    _video.start();
-    _videoSub    = _video.frameStream.listen((f) {
-      if (mounted) setState(() => _currentFrame = f);
-    });
-    _videoConnSub = _video.connectionStream.listen((v) {
-      if (mounted) setState(() => _videoConnected = v);
-    });
-  }
-
-  void _initTelemetry() {
-    _telemetry.start();
-    
-    _flightTimerSub = _flightTimer.elapsedStream.listen((d) {
-      if (mounted) setState(() => _flightTime = d);
-    });
-
-    _telemetrySub = _telemetry.telemetryStream.listen((t) {
-      if (mounted) {
-        _flightTimer.updateArmState(t.isArmed);
-        setState(() => _droneTelemetry = t);
-        
-        // Düşük batarya uyarısı (%20 altı)
-        if (t.batteryPercent >= 0 && t.batteryPercent < 20 && !_batteryWarningShown) {
-          _batteryWarningShown = true;
-          HapticFeedback.heavyImpact();
-          _snack('KRİTİK BATARYA: %${t.batteryPercent}', Icons.battery_alert, AppColors.red);
-        } else if (t.batteryPercent >= 20) {
-          _batteryWarningShown = false; // Şarj edilirse veya pil değişirse sıfırla
-        }
-      }
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    final ip   = _ipCtrl.text.trim();
-    final port = int.tryParse(_portCtrl.text.trim()) ?? 14540;
-    await _settings.save(ip: ip, port: port);
-    _mavlink.setTarget(ip, port);
-    _video.setTarget(ip);
-    if (mounted) _snack('Hedef güncellendi ($ip:$port)', Icons.check_circle, AppColors.green);
-  }
-
-  Future<void> _saveFlightSettings(FlightSettings fs) async {
-    await _settings.saveFlightSettings(fs);
-    _follow.applySettings(fs);
-    if (mounted) {
-      setState(() => _flightSettings = fs);
-      _snack('Uçuş ayarları kaydedildi', Icons.check_circle, AppColors.green);
-    }
-  }
-
   // ─── Komut Handler'ları ──────────────────────────────────────────────────
 
-  /// Drone bağlı değilse uyarı gösterir ve false döner.
-  bool _requireConnection() {
-    if (!_isConnected) {
-      _snack('Drone bağlantısı yok!', Icons.link_off, AppColors.red);
-      return false;
-    }
-    if (_isCommandPending) {
-      _snack('Önceki komutun yanıtı bekleniyor...', Icons.hourglass_empty, AppColors.amber);
-      return false;
-    }
-    return true;
-  }
-
-  void _toggleFollow() {
-    if (!_isConnected && !_followActive) {
-      _snack('Önce drone bağlantısı kurulmalı!', Icons.link_off, AppColors.red);
-      return;
-    }
-    if (_lat == 0.0 || _lon == 0.0) {
-      _snack('GPS fix bekleniyor...', Icons.gps_off, AppColors.amber);
-      return;
-    }
-    HapticFeedback.mediumImpact();
-    setState(() => _followActive = !_followActive);
-    if (_followActive) {
-      _follow.start();
-      _snack('FOLLOW ME AKTİF', Icons.person_pin_circle, AppColors.cyan);
-    } else {
-      _follow.stop();
-      _snack('FOLLOW ME PASİF', Icons.person_pin_circle_outlined, AppColors.grey);
-    }
-  }
-
-  Future<void> _onArmDisarm() async {
-    if (!_requireConnection()) return;
+  Future<void> _onArmDisarm(MainState state) async {
+    final cubit = context.read<MainCubit>();
+    if (!cubit.requireConnection()) return;
     
-    if (!_droneTelemetry.isArmed) {
-      // ARM edilecekse checklist göster
+    if (!state.droneTelemetry.isArmed) {
       final ok = await PreflightChecklistDialog.show(
         context,
-        telemetry: _droneTelemetry,
-        isConnected: _isConnected,
+        telemetry: state.droneTelemetry,
+        isConnected: state.isConnected,
       );
       if (!ok || !mounted) return;
+      cubit.sendArmDisarm(true);
     } else {
-      // DISARM edilecekse basit onay
       final confirmed = await ConfirmDialog.show(
         context,
         title: 'MOTORLARI KAPAT',
@@ -285,94 +100,32 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         accentColor: AppColors.red,
       );
       if (!confirmed || !mounted) return;
+      cubit.sendArmDisarm(false);
     }
-
-    HapticFeedback.heavyImpact();
-    setState(() => _isCommandPending = true);
-    _mavlink.sendArmDisarm(!_droneTelemetry.isArmed);
-    _snack(_droneTelemetry.isArmed ? 'DISARM gönderiliyor...' : 'ARM gönderiliyor...', Icons.hourglass_top, AppColors.amber);
   }
 
-  void _onHold() {
-    if (!_requireConnection()) return;
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendHold();
-    _snack('HOLD komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
-  }
-
-  void _onLand() {
-    if (!_requireConnection()) return;
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendLand();
-    _snack('LAND komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
-  }
-
-  void _onOrbit(double radius) {
-    if (!_requireConnection()) return;
-    if (!_droneTelemetry.isArmed) {
-      _snack('HATA: Araç ARM edilmeden orbit komutu verilemez!', Icons.error, AppColors.red);
-      return;
-    }
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendOrbit(radius: radius);
-    _snack('ORBİT komutu gönderildi (${radius.toStringAsFixed(0)}m) — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
-  }
-
-  void _onStabilize() {
-    if (!_requireConnection()) return;
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendStabilize();
-    _snack('STABİLİZE komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
-  }
-
-  Future<void> _onTakeoff() async {
-    if (!_requireConnection()) return;
+  Future<void> _onTakeoff(MainState state) async {
+    final cubit = context.read<MainCubit>();
+    if (!cubit.requireConnection()) return;
     
-    // Uçuş öncesi kontrol
     final ok = await PreflightChecklistDialog.show(
       context,
-      telemetry: _droneTelemetry,
-      isConnected: _isConnected,
+      telemetry: state.droneTelemetry,
+      isConnected: state.isConnected,
     );
     if (!ok || !mounted) return;
 
     final alt = await TakeoffDialog.show(
       context,
-      defaultAltitude: _flightSettings.defaultTakeoffAlt,
+      defaultAltitude: state.flightSettings.defaultTakeoffAlt,
     );
     if (alt == null || !mounted) return;
-
-    // ARM Kontrolü ve Otomatik ARM
-    if (!_droneTelemetry.isArmed) {
-      _snack('Araç otomatik ARM ediliyor...', Icons.security, AppColors.amber);
-      _mavlink.sendArmDisarm(true);
-      await Future.delayed(const Duration(milliseconds: 500)); // Arm olmasını bekle
-    }
-
-    HapticFeedback.heavyImpact();
-    setState(() => _isCommandPending = true);
-    _mavlink.sendTakeoff(alt);
-    _snack('TAKEOFF komutu gönderildi (${alt.toStringAsFixed(0)}m) — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
+    cubit.sendTakeoff(alt);
   }
 
   Future<void> _onRtl() async {
-    if (!_requireConnection()) return;
+    final cubit = context.read<MainCubit>();
+    if (!cubit.requireConnection()) return;
     final confirmed = await ConfirmDialog.show(
       context,
       title:       'RTL',
@@ -381,26 +134,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       accentColor: AppColors.amber,
     );
     if (!confirmed || !mounted) return;
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendRtl();
-    _snack('RTL komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
-  }
-
-  void _onTransition(bool toMulticopter) {
-    if (!_requireConnection()) return;
-    HapticFeedback.heavyImpact();
-    setState(() => _isCommandPending = true);
-    _mavlink.sendVtolTransition(toMulticopter: toMulticopter);
-    final modeStr = toMulticopter ? 'MULTICOPTER' : 'SABİT KANAT';
-    _snack('$modeStr geçiş komutu gönderildi...', Icons.hourglass_top, AppColors.cyan);
+    cubit.sendRtl();
   }
 
   Future<void> _onMissionStart() async {
-    if (!_requireConnection()) return;
+    final cubit = context.read<MainCubit>();
+    if (!cubit.requireConnection()) return;
     final confirmed = await ConfirmDialog.show(
       context,
       title:       'GÖREV BAŞLAT',
@@ -409,13 +148,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       accentColor: AppColors.cyan,
     );
     if (!confirmed || !mounted) return;
-    HapticFeedback.heavyImpact();
-    setState(() {
-      _followActive = false;
-      _isCommandPending = true;
-    });
-    _mavlink.sendMissionStart();
-    _snack('GÖREV komutu gönderildi — yanıt bekleniyor...', Icons.hourglass_top, AppColors.amber);
+    cubit.sendMissionStart();
   }
 
   // ─── Yardımcılar ────────────────────────────────────────────────────────
@@ -448,17 +181,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _connSub?.cancel();
-    _followSub?.cancel();
-    _ackSub?.cancel();
-    _videoSub?.cancel();
-    _videoConnSub?.cancel();
-    _telemetrySub?.cancel();
-    _flightTimerSub?.cancel();
-    _location.stop();
-    _video.dispose();
-    _telemetry.dispose();
-    _flightTimer.dispose();
     _pulseCtrl.dispose();
     _bgCtrl.dispose();
     _radarCtrl.dispose();
@@ -470,34 +192,56 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.translucent,
-        child: Stack(children: [
-        AnimatedBuilder(
-          animation: _bgCtrl,
-          builder: (_, __) => CustomPaint(
-            size: MediaQuery.of(context).size,
-            painter: BgScanPainter(progress: _bgCtrl.value, red: AppColors.red),
-          ),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<MainCubit, MainState>(
+          listenWhen: (prev, curr) => prev.snackBarMessage != curr.snackBarMessage && curr.snackBarMessage != null,
+          listener: (context, state) {
+            final msg = state.snackBarMessage!;
+            _snack(msg.text, msg.icon, msg.color);
+          },
         ),
-        if (_mapFullscreen)
-          _buildFullscreen()
-        else
-          SafeArea(
-            child: Column(children: [
-              TopBar(isConnected: _isConnected, pulse: _pulse),
-              _buildMapArea(),
-              const SizedBox(height: 6),
-              TelemetryBar(telemetry: _droneTelemetry, flightTime: _flightTime),
-              const SizedBox(height: 2),
-              _buildTabBar(),
-              Expanded(child: _buildTabContent()),
-            ]),
-          ),
-        ]),
+        BlocListener<MainCubit, MainState>(
+          listenWhen: (prev, curr) => prev.ip != curr.ip || prev.port != curr.port,
+          listener: (context, state) {
+            if (_ipCtrl.text != state.ip) _ipCtrl.text = state.ip;
+            if (_portCtrl.text != state.port.toString()) _portCtrl.text = state.port.toString();
+          },
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Stack(children: [
+            AnimatedBuilder(
+              animation: _bgCtrl,
+              builder: (_, __) => CustomPaint(
+                size: MediaQuery.of(context).size,
+                painter: BgScanPainter(progress: _bgCtrl.value, red: AppColors.red),
+              ),
+            ),
+            BlocBuilder<MainCubit, MainState>(
+              builder: (context, state) {
+                if (state.mapFullscreen) {
+                  return _buildFullscreen(state);
+                }
+                return SafeArea(
+                  child: Column(children: [
+                    TopBar(isConnected: state.isConnected, pulse: _pulse),
+                    _buildMapArea(state),
+                    const SizedBox(height: 6),
+                    TelemetryBar(telemetry: state.droneTelemetry, flightTime: state.flightTime),
+                    const SizedBox(height: 2),
+                    _buildTabBar(),
+                    Expanded(child: _buildTabContent(state)),
+                  ]),
+                );
+              },
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -516,7 +260,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           color: AppColors.red.withValues(alpha: 0.12),
-          border: Border(bottom: BorderSide(color: AppColors.red, width: 2)),
+          border: const Border(bottom: BorderSide(color: AppColors.red, width: 2)),
         ),
         labelColor: AppColors.red,
         unselectedLabelColor: AppColors.grey,
@@ -531,7 +275,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(MainState state) {
+    final cubit = context.read<MainCubit>();
     return TabBarView(
       controller: _tabCtrl,
       children: [
@@ -540,28 +285,28 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Column(children: [
             CommandPanel(
-              followActive:       _followActive,
-              followState:        _followState,
-              isConnected:        _isConnected,
-              onFollowToggle:     _toggleFollow,
-              onHold:             _onHold,
-              onLand:             _onLand,
-              onOrbit:            _onOrbit,
-              onStabilize:        _onStabilize,
-              defaultOrbitRadius: _flightSettings.defaultOrbitRadius,
+              followActive:       state.followActive,
+              followState:        state.followState,
+              isConnected:        state.isConnected,
+              onFollowToggle:     cubit.toggleFollow,
+              onHold:             cubit.sendHold,
+              onLand:             cubit.sendLand,
+              onOrbit:            cubit.sendOrbit,
+              onStabilize:        cubit.sendStabilize,
+              defaultOrbitRadius: state.flightSettings.defaultOrbitRadius,
             ),
-            if (_followActive) ...[
+            if (state.followActive) ...[
               const SizedBox(height: 10),
-              FollowStateBar(currentState: _followState),
+              FollowStateBar(currentState: state.followState),
             ],
             const SizedBox(height: 10),
             FlightCommandPanel(
-              isArmed:        _droneTelemetry.isArmed,
-              onArmDisarm:    _onArmDisarm,
-              onTakeoff:      _onTakeoff,
+              isArmed:        state.droneTelemetry.isArmed,
+              onArmDisarm:    () => _onArmDisarm(state),
+              onTakeoff:      () => _onTakeoff(state),
               onRtl:          _onRtl,
               onMissionStart: _onMissionStart,
-              onTransition:   _onTransition,
+              onTransition:   cubit.sendTransition,
             ),
             const SizedBox(height: 10),
             ElevatedButton.icon(
@@ -590,12 +335,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ConnectionPanel(
               ipCtrl:   _ipCtrl,
               portCtrl: _portCtrl,
-              onSave:   _saveSettings,
+              onSave:   () => cubit.saveSettings(_ipCtrl.text, _portCtrl.text),
             ),
             const SizedBox(height: 10),
             FlightSettingsPanel(
-              settings: _flightSettings,
-              onSave:   _saveFlightSettings,
+              settings: state.flightSettings,
+              onSave:   cubit.saveFlightSettings,
             ),
             const SizedBox(height: 20),
             _buildFooter(),
@@ -605,17 +350,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildMapArea() {
+  Widget _buildMapArea(MainState state) {
     return GestureDetector(
-      onTap: () => setState(() => _mapFullscreen = true),
+      onTap: () => context.read<MainCubit>().setMapFullscreen(true),
       child: Container(
         height: 220,
         margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
           color: const Color(0xFF0A0A0A),
           border: Border.all(
-            color: (_videoConnected ? AppColors.green : AppColors.red).withValues(alpha: 
-              _videoConnected ? 0.45 : 0.35,
+            color: (state.videoConnected ? AppColors.green : AppColors.red).withValues(alpha: 
+              state.videoConnected ? 0.45 : 0.35,
             ),
           ),
           borderRadius: BorderRadius.circular(3),
@@ -623,10 +368,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: VideoHud(
-            frame:          _currentFrame,
-            videoConnected: _videoConnected,
+            frame:          state.currentFrame,
+            videoConnected: state.videoConnected,
             fullscreen:     false,
-            lat: _lat, lon: _lon, alt: _alt,
+            lat: state.lat, lon: state.lon, alt: state.alt,
             radarAngle:     _radarAngle,
           ),
         ),
@@ -634,15 +379,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFullscreen() {
+  Widget _buildFullscreen(MainState state) {
     return GestureDetector(
-      onTap: () => setState(() => _mapFullscreen = false),
+      onTap: () => context.read<MainCubit>().setMapFullscreen(false),
       child: Stack(children: [
         VideoHud(
-          frame:          _currentFrame,
-          videoConnected: _videoConnected,
+          frame:          state.currentFrame,
+          videoConnected: state.videoConnected,
           fullscreen:     true,
-          lat: _lat, lon: _lon, alt: _alt,
+          lat: state.lat, lon: state.lon, alt: state.alt,
           radarAngle:     _radarAngle,
         ),
         Positioned(top: 48, right: 16,

@@ -118,16 +118,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 scale: _logoScale,
                 child: Container(
                   width: 90, height: 90,
-                  // HATA DÜZELTİLDİ: Buradaki BoxDecoration önceden const'tu.
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.red, width: 2),
                   ),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/images/muninn.png',
-                      width: 100, height: 100, fit: BoxFit.contain,
-                    ),
+                  child: const Center(
+                    child: Icon(Icons.flight_takeoff, color: AppColors.red, size: 40),
                   ),
                 ),
               ),
