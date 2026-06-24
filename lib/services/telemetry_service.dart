@@ -67,6 +67,11 @@ class TelemetryService {
   }
 
   void _onFrame(MavlinkFrame frame) {
+    // Sadece tanımlı Drone'dan gelen mesajları işle (QGC veya kendi mesajlarımızı yoksay)
+    if (_mavlink.droneSystemId != null && frame.systemId != _mavlink.droneSystemId) {
+      return;
+    }
+
     final msg = frame.message;
 
     if (msg is SysStatus) {

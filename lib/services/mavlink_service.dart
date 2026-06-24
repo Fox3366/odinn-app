@@ -174,7 +174,15 @@ class MavlinkService {
   void sendMissionStart() => _setPx4Mode(4, 4);
 
   /// Loiter (askı) modu — PX4'te main_mode = 4 (AUTO), sub_mode = 3 (LOITER)
-  void sendHold() => _setPx4Mode(4, 3);
+  void sendHold() {
+    _setPx4Mode(4, 3);
+    // Drone Follow'da yaklaşma (approaching) safhasındaysa DO_REPOSITION ile ilerliyordur.
+    // Mod zaten LOITER olduğu için sadece mod değiştirmek onu durdurmaz, son hedefe gitmeye devam eder.
+    // Bu yüzden mevcut konumuna Reposition atarak olduğu yerde durmasını (fren yapmasını) sağlıyoruz.
+    if (droneLat != 0.0 && droneLon != 0.0 && droneAltAmsl != 0.0) {
+      sendReposition(droneLat, droneLon, droneAltAmsl);
+    }
+  }
 
   /// Stabilize modu — PX4'te main_mode = 7 (STABILIZED)
   void sendStabilize() => _setPx4Mode(7, 0);
