@@ -90,14 +90,23 @@ class MissionService {
     _stateCtrl.add(state);
   }
 
+  String lastError = '';
+
   /// Start mission upload protocol
   void uploadMission(List<MissionWaypoint> waypoints) {
     if (waypoints.isEmpty) return;
     
-    // We add a dummy HOME waypoint at index 0 (QGC standard behavior)
-    // PX4 usually expects item 0 to be home or the first actual waypoint
-    _currentMission = waypoints;
+    // PX4 ve ArduPilot için seq 0 genellikle HOME noktası olarak kabul edilir.
+    // Orijinal listede bu eksikti. İlk görev noktasını kopyalayarak seq 0 (Dummy Home) yapıyoruz.
+    final dummyHome = MissionWaypoint(
+      position: waypoints.first.position,
+      altitude: waypoints.first.altitude,
+      commandType: MissionCommandType.waypoint,
+    );
+    
+    _currentMission = [dummyHome, ...waypoints];
     _setState(MissionState.uploading);
+    lastError = 'Zaman Aşımı (Timeout) - Drone yanıt vermedi';
 
     // Send MISSION_COUNT
     _mavlink.sendMessage(MissionCount(
@@ -140,6 +149,7 @@ class MissionService {
           }
         });
       } else {
+        lastError = 'Drone reddetti. Hata Kodu: ${msg.type}';
         _setState(MissionState.error);
       }
     }
@@ -161,7 +171,7 @@ class MissionService {
               wp.param1, // Custom param (e.g. hold time)
       param2: 0, // Accept radius
       param3: 0, // Pass radius
-      param4: double.nan, // Yaw (NaN uses default)
+      param4: 0.0, // Yaw (0.0 uses default, NaN can cause issues)
       x: (wp.position.latitude * 1e7).toInt(),
       y: (wp.position.longitude * 1e7).toInt(),
       z: wp.altitude,

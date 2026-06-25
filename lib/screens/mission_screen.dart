@@ -30,7 +30,7 @@ class _MissionScreenState extends State<MissionScreen> {
       if (state == MissionState.success) {
         _showMessage('Gorev basariyla araca yuklendi!', Colors.green);
       } else if (state == MissionState.error) {
-        _showMessage('Gorev yukleme basarisiz oldu (Timeout).', Colors.red);
+        _showMessage('Görev yükleme başarısız! Detay: ${_missionService.lastError}', Colors.red);
       }
     });
   }
@@ -93,16 +93,17 @@ class _MissionScreenState extends State<MissionScreen> {
           Row(
             children: [
               Expanded(
+                flex: 7, // Ekranın %70'i harita
                 child: MissionMapWidget(
                   waypoints: _waypoints,
                   onMapTap: _addWaypoint,
                   onWaypointTap: (idx) {
-                    // Marker'a tklannca zel bir eylem yaplabilir (rnein silme/editleme)
+                    // Marker'a tıklanınca eylem
                   },
                 ),
               ),
-              SizedBox(
-                width: 320, // Sabit genislikli sag panel
+              Expanded(
+                flex: 3, // Ekranın %30'u panel (Responsive)
                 child: MissionListPanel(
                   waypoints: _waypoints,
                   onEdit: _editWaypoint,

@@ -133,25 +133,50 @@ class MissionListPanel extends StatelessWidget {
                       return Card(
                         color: Colors.blueGrey[800],
                         margin: const EdgeInsets.only(bottom: 8.0),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.green,
-                            child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                          title: Text(wp.commandType.label, style: const TextStyle(color: Colors.orangeAccent, fontSize: 14, fontWeight: FontWeight.bold)),
-                          subtitle: Text('İrtifa: ${wp.altitude} m\nParam: ${wp.param1}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                          isThreeLine: true,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.amber, size: 22),
-                                onPressed: () => _showEditDialog(context, index),
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: Colors.green,
+                                    child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(wp.commandType.label, style: const TextStyle(color: Colors.orangeAccent, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.redAccent, size: 22),
-                                onPressed: () => onDelete(index),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text('İrtifa: ${wp.altitude} m\nParam: ${wp.param1}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: const Icon(Icons.edit, color: Colors.amber, size: 20),
+                                        onPressed: () => _showEditDialog(context, index),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                                        onPressed: () => onDelete(index),
+                                      ),
+                                    ],
+                                  )
+                                ],
                               ),
                             ],
                           ),
