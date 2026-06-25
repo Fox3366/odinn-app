@@ -40,15 +40,15 @@ extension MissionCommandTypeExtension on MissionCommandType {
 
   String get label {
     switch (this) {
-      case MissionCommandType.waypoint: return 'Waypoint';
-      case MissionCommandType.takeoff: return 'Takeoff';
-      case MissionCommandType.land: return 'Land';
-      case MissionCommandType.rtl: return 'Return To Launch';
-      case MissionCommandType.loiterUnlim: return 'Loiter (Unlimited)';
-      case MissionCommandType.loiterTime: return 'Loiter (Time)';
-      case MissionCommandType.roi: return 'Region of Interest';
-      case MissionCommandType.transitionToFw: return 'Gecis: Sabit Kanat (FW)';
-      case MissionCommandType.transitionToMc: return 'Gecis: Multikopter (MC)';
+      case MissionCommandType.waypoint: return 'Ara Nokta (Git)';
+      case MissionCommandType.takeoff: return 'Kalkış Yap';
+      case MissionCommandType.land: return 'İniş Yap';
+      case MissionCommandType.rtl: return 'Eve Dönüş (RTL)';
+      case MissionCommandType.loiterUnlim: return 'Süresiz Bekleme (Daire)';
+      case MissionCommandType.loiterTime: return 'Süreli Bekleme';
+      case MissionCommandType.roi: return 'Kamerayı Çevir (ROI)';
+      case MissionCommandType.transitionToFw: return 'Sabit Kanata Geç (FW)';
+      case MissionCommandType.transitionToMc: return 'Multikoptere Geç (MC)';
     }
   }
 }

@@ -26,8 +26,10 @@ class _MissionMapWidgetState extends State<MissionMapWidget> {
   final TelemetryService _telemetry = TelemetryService();
   final MavlinkService _mavlink = MavlinkService();
 
-  LatLng _dronePos = const LatLng(39.92077, 32.85411); // Default Ankara
+  LatLng _dronePos = const LatLng(39.92077, 32.85411); // Varsayilan Ankara
   double _droneHeading = 0.0;
+  bool _isAutoCenter = true;
+  bool _hasInitialFix = false;
 
   @override
   void initState() {
@@ -35,14 +37,36 @@ class _MissionMapWidgetState extends State<MissionMapWidget> {
     _telemetry.telemetryStream.listen((data) {
       if (mounted) {
         setState(() {
-          // DroneTelemetry objesinde lat/lon olmadigi icin MavlinkService'den aliyoruz.
           if (_mavlink.droneLat != 0.0 && _mavlink.droneLon != 0.0) {
-            _dronePos = LatLng(_mavlink.droneLat, _mavlink.droneLon);
+            final newPos = LatLng(_mavlink.droneLat, _mavlink.droneLon);
+            _dronePos = newPos;
+            
+            // Ilk fix alindiginda veya autoCenter aciksa haritayi tasi
+            if (!_hasInitialFix || _isAutoCenter) {
+              _hasInitialFix = true;
+              // Harita tamamen yuklenmediyse diye try-catch icine aliyoruz
+              try {
+                _mapController.move(_dronePos, _mapController.camera.zoom);
+              } catch (e) {
+                // Ignore if camera is not ready
+              }
+            }
           }
           _droneHeading = data.heading.toDouble();
         });
       }
     });
+  }
+
+  void _recenter() {
+    setState(() {
+      _isAutoCenter = true;
+    });
+    try {
+      _mapController.move(_dronePos, 16.0);
+    } catch (e) {
+      // Ignore
+    }
   }
 
   @override
@@ -88,28 +112,50 @@ class _MissionMapWidgetState extends State<MissionMapWidget> {
       );
     }
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _dronePos,
-        initialZoom: 15.0,
-        onTap: (tapPosition, point) => widget.onMapTap(point),
-      ),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.muninn.iha',
-        ),
-        PolylineLayer(
-          polylines: [
-            Polyline(
-              points: points,
-              strokeWidth: 4.0,
-              color: Colors.blueAccent,
-            )
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _dronePos,
+            initialZoom: 15.0,
+            onPositionChanged: (pos, hasGesture) {
+              if (hasGesture) {
+                setState(() {
+                  _isAutoCenter = false;
+                });
+              }
+            },
+            onTap: (tapPosition, point) => widget.onMapTap(point),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.muninn.iha',
+            ),
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: points,
+                  strokeWidth: 4.0,
+                  color: Colors.blueAccent,
+                )
+              ],
+            ),
+            MarkerLayer(markers: markers),
           ],
         ),
-        MarkerLayer(markers: markers),
+        
+        // Auto-center Toggle Button
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: FloatingActionButton(
+            backgroundColor: _isAutoCenter ? Colors.blue : Colors.blueGrey,
+            onPressed: _recenter,
+            child: Icon(_isAutoCenter ? Icons.gps_fixed : Icons.gps_not_fixed, color: Colors.white),
+          ),
+        ),
       ],
     );
   }

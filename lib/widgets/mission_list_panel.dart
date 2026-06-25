@@ -32,14 +32,14 @@ class MissionListPanel extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Duzenle (WP ${index + 1})'),
+              title: Text('Noktayı Düzenle (WP ${index + 1})'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<MissionCommandType>(
                       initialValue: currentCmd,
-                      decoration: const InputDecoration(labelText: 'Gorev Tipi'),
+                      decoration: const InputDecoration(labelText: 'Görev Tipi (Ne Yapılacak?)'),
                       items: MissionCommandType.values.map((cmd) {
                         return DropdownMenuItem(
                           value: cmd,
@@ -54,7 +54,7 @@ class MissionListPanel extends StatelessWidget {
                     TextField(
                       controller: altCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Yukseklik (metre)'),
+                      decoration: const InputDecoration(labelText: 'İrtifa / Yükseklik (metre)'),
                     ),
                     if (currentCmd == MissionCommandType.loiterTime || currentCmd == MissionCommandType.waypoint) ...[
                       const SizedBox(height: 10),
@@ -62,7 +62,7 @@ class MissionListPanel extends StatelessWidget {
                         controller: paramCtrl,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: currentCmd == MissionCommandType.waypoint ? 'Bekleme Suresi (sn)' : 'Loiter Suresi (sn)',
+                          labelText: currentCmd == MissionCommandType.waypoint ? 'Noktada Bekleme Süresi (saniye)' : 'Havada Tur Atma Süresi (saniye)',
                         ),
                       ),
                     ]
@@ -72,7 +72,7 @@ class MissionListPanel extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('IPTAL'),
+                  child: const Text('İPTAL'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -96,74 +96,63 @@ class MissionListPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 140,
       color: Colors.black87,
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text('Gorev Noktalari', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: onClearAll,
-                    icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                    label: const Text('Temizle', style: TextStyle(color: Colors.redAccent)),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: onUpload,
-                    icon: const Icon(Icons.upload),
-                    label: const Text('GOREV YUKLE'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              )
-            ],
+          // Header Section
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            color: Colors.blueGrey[900],
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.route, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Görev Noktaları', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
           ),
+          
+          // List Section
           Expanded(
             child: waypoints.isEmpty
-                ? const Center(child: Text('Haritaya dokunarak guzergah olusturun.', style: TextStyle(color: Colors.white54)))
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Haritaya dokunarak güzergah oluşturun.', 
+                        style: TextStyle(color: Colors.white54), 
+                        textAlign: TextAlign.center
+                      ),
+                    )
+                  )
                 : ListView.builder(
-                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
                     itemCount: waypoints.length,
                     itemBuilder: (context, index) {
                       final wp = waypoints[index];
                       return Card(
                         color: Colors.blueGrey[800],
-                        margin: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: 120,
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        margin: const EdgeInsets.only(bottom: 8.0),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.green,
+                            child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                          title: Text(wp.commandType.label, style: const TextStyle(color: Colors.orangeAccent, fontSize: 14, fontWeight: FontWeight.bold)),
+                          subtitle: Text('İrtifa: ${wp.altitude} m\nParam: ${wp.param1}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          isThreeLine: true,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('WP ${index + 1}', style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 2),
-                              Text(wp.commandType.label, style: const TextStyle(color: Colors.orangeAccent, fontSize: 10), overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 2),
-                              Text('${wp.altitude} m', style: const TextStyle(color: Colors.white)),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  InkWell(
-                                    onTap: () => _showEditDialog(context, index),
-                                    child: const Icon(Icons.edit, color: Colors.amber, size: 20),
-                                  ),
-                                  InkWell(
-                                    onTap: () => onDelete(index),
-                                    child: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                                  ),
-                                ],
-                              )
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.amber, size: 22),
+                                onPressed: () => _showEditDialog(context, index),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.redAccent, size: 22),
+                                onPressed: () => onDelete(index),
+                              ),
                             ],
                           ),
                         ),
@@ -171,6 +160,33 @@ class MissionListPanel extends StatelessWidget {
                     },
                   ),
           ),
+
+          // Actions Section
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            color: Colors.blueGrey[900],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: waypoints.isEmpty ? null : onUpload,
+                  icon: const Icon(Icons.upload),
+                  label: const Text('GÖREV YÜKLE'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: waypoints.isEmpty ? null : onClearAll,
+                  icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+                  label: const Text('Tümünü Temizle', style: TextStyle(color: Colors.redAccent)),
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );

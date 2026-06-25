@@ -129,8 +129,8 @@ class TelemetryBar extends StatelessWidget {
             icon:  Icons.social_distance,
             value: telemetry.distanceToGcs < 1000
                 ? telemetry.distanceToGcs.toStringAsFixed(0)
-                : '${(telemetry.distanceToGcs / 1000).toStringAsFixed(1)}k',
-            unit:  'm',
+                : (telemetry.distanceToGcs / 1000).toStringAsFixed(1),
+            unit:  telemetry.distanceToGcs < 1000 ? 'm' : 'km',
             color: AppColors.redL,
           ),
 

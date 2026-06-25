@@ -85,16 +85,26 @@ class TelemetryService {
     }
 
     if (msg is BatteryStatus) {
-      // BATTERY_STATUS mesajı SysStatus'a göre daha hassastır.
-      _batteryVoltage = msg.voltages.isNotEmpty && msg.voltages[0] != 65535 
-          ? (msg.voltages[0] / 1000.0) 
-          : _batteryVoltage;
+      // BATTERY_STATUS'ta cell voltajları gönderilir.
+      // Eğer hücreler ölçülmüyorsa voltages[0] toplam voltajı içerir.
+      // Her iki durumda da 65535 (bilinmiyor) olmayan tüm elemanların toplamı bize net voltajı verir.
+      if (msg.voltages.isNotEmpty) {
+        int totalMv = 0;
+        bool hasValid = false;
+        for (var v in msg.voltages) {
+          if (v != 65535) {
+            totalMv += v;
+            hasValid = true;
+          }
+        }
+        if (hasValid) {
+          _batteryVoltage = totalMv / 1000.0;
+        }
+      }
       
       int current = msg.currentBattery;
       if (current > 32767) current -= 65536;
-      if (current != -1) {
-        _batteryCurrent = current / 100.0; // cA -> A
-      }
+      _batteryCurrent = (current == -1) ? -1.0 : (current / 100.0); // cA -> A
       
       if (msg.batteryRemaining != -1) {
         _batteryPercent = msg.batteryRemaining;

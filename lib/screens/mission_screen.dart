@@ -90,7 +90,7 @@ class _MissionScreenState extends State<MissionScreen> {
       ),
       body: Stack(
         children: [
-          Column(
+          Row(
             children: [
               Expanded(
                 child: MissionMapWidget(
@@ -101,12 +101,15 @@ class _MissionScreenState extends State<MissionScreen> {
                   },
                 ),
               ),
-              MissionListPanel(
-                waypoints: _waypoints,
-                onEdit: _editWaypoint,
-                onDelete: _deleteWaypoint,
-                onClearAll: _clearAll,
-                onUpload: _uploadMission,
+              SizedBox(
+                width: 320, // Sabit genislikli sag panel
+                child: MissionListPanel(
+                  waypoints: _waypoints,
+                  onEdit: _editWaypoint,
+                  onDelete: _deleteWaypoint,
+                  onClearAll: _clearAll,
+                  onUpload: _uploadMission,
+                ),
               ),
             ],
           ),
