@@ -2,69 +2,13 @@ import 'dart:async';
 import 'package:dart_mavlink/mavlink.dart';
 import 'package:dart_mavlink/dialects/common.dart';
 import 'mavlink_service.dart';
-import 'package:latlong2/latlong.dart';
+import '../models/mission_waypoint.dart';
 
 enum MissionState {
   idle,
   uploading,
   success,
   error
-}
-
-enum MissionCommandType {
-  waypoint,
-  takeoff,
-  land,
-  rtl,
-  loiterUnlim,
-  loiterTime,
-  roi,
-  transitionToFw,
-  transitionToMc
-}
-
-extension MissionCommandTypeExtension on MissionCommandType {
-  int get mavCmd {
-    switch (this) {
-      case MissionCommandType.waypoint: return 16;
-      case MissionCommandType.takeoff: return 22;
-      case MissionCommandType.land: return 21;
-      case MissionCommandType.rtl: return 20;
-      case MissionCommandType.loiterUnlim: return 17;
-      case MissionCommandType.loiterTime: return 19;
-      case MissionCommandType.roi: return 195;
-      case MissionCommandType.transitionToFw: return 3000;
-      case MissionCommandType.transitionToMc: return 3000;
-    }
-  }
-
-  String get label {
-    switch (this) {
-      case MissionCommandType.waypoint: return 'Ara Nokta (Git)';
-      case MissionCommandType.takeoff: return 'Kalkış Yap';
-      case MissionCommandType.land: return 'İniş Yap';
-      case MissionCommandType.rtl: return 'Eve Dönüş (RTL)';
-      case MissionCommandType.loiterUnlim: return 'Süresiz Bekleme (Daire)';
-      case MissionCommandType.loiterTime: return 'Süreli Bekleme';
-      case MissionCommandType.roi: return 'Kamerayı Çevir (ROI)';
-      case MissionCommandType.transitionToFw: return 'Sabit Kanata Geç (FW)';
-      case MissionCommandType.transitionToMc: return 'Multikoptere Geç (MC)';
-    }
-  }
-}
-
-class MissionWaypoint {
-  final LatLng position;
-  double altitude;
-  MissionCommandType commandType;
-  double param1; // Used for hold time, delay, etc.
-
-  MissionWaypoint({
-    required this.position, 
-    this.altitude = 50.0,
-    this.commandType = MissionCommandType.waypoint,
-    this.param1 = 0.0,
-  });
 }
 
 class MissionService {
@@ -96,15 +40,9 @@ class MissionService {
   void uploadMission(List<MissionWaypoint> waypoints) {
     if (waypoints.isEmpty) return;
     
-    // PX4 ve ArduPilot için seq 0 genellikle HOME noktası olarak kabul edilir.
-    // Orijinal listede bu eksikti. İlk görev noktasını kopyalayarak seq 0 (Dummy Home) yapıyoruz.
-    final dummyHome = MissionWaypoint(
-      position: waypoints.first.position,
-      altitude: waypoints.first.altitude,
-      commandType: MissionCommandType.waypoint,
-    );
-    
-    _currentMission = [dummyHome, ...waypoints];
+    // QGC Standartları: PX4 otopilotu için ilk (home) nokta gönderilmez.
+    // Kullanıcının haritada eklediği İLK nokta doğrudan Sequence 0 olarak gönderilir.
+    _currentMission = List.from(waypoints);
     _setState(MissionState.uploading);
     lastError = 'Zaman Aşımı (Timeout) - Drone yanıt vermedi';
 
@@ -162,16 +100,14 @@ class MissionService {
       targetSystem: _mavlink.droneSystemId ?? 1,
       targetComponent: _mavlink.droneComponentId ?? 1,
       seq: seq,
-      frame: 6, // MAV_FRAME_GLOBAL_RELATIVE_ALT_INT
-      command: wp.commandType.mavCmd, // Get from selected command type
+      frame: wp.frame, // Genelde MAV_FRAME_GLOBAL_RELATIVE_ALT_INT (6)
+      command: wp.commandType.mavCmd,
       current: seq == 0 ? 1 : 0,
-      autocontinue: 1,
-      param1: (wp.commandType == MissionCommandType.transitionToFw) ? 3.0 :
-              (wp.commandType == MissionCommandType.transitionToMc) ? 4.0 :
-              wp.param1, // Custom param (e.g. hold time)
-      param2: 0, // Accept radius
-      param3: 0, // Pass radius
-      param4: 0.0, // Yaw (0.0 uses default, NaN can cause issues)
+      autocontinue: wp.autoContinue ? 1 : 0,
+      param1: wp.param1, 
+      param2: wp.param2,
+      param3: wp.param3, 
+      param4: wp.param4, 
       x: (wp.position.latitude * 1e7).toInt(),
       y: (wp.position.longitude * 1e7).toInt(),
       z: wp.altitude,

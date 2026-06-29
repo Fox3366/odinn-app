@@ -171,7 +171,13 @@ class MavlinkService {
   void sendRtl() => _setPx4Mode(4, 5);
 
   /// Mission Start — PX4'te main_mode = 4 (AUTO), sub_mode = 4 (MISSION)
-  void sendMissionStart() => _setPx4Mode(4, 4);
+  void sendMissionStart() {
+    _setPx4Mode(4, 4);
+    // QGC Standartı: Önce MISSION moduna alınır, ardından ARM edilir.
+    Future.delayed(const Duration(milliseconds: 500), () {
+      sendArmDisarm(true);
+    });
+  }
 
   /// Loiter (askı) modu — PX4'te main_mode = 4 (AUTO), sub_mode = 3 (LOITER)
   void sendHold() {

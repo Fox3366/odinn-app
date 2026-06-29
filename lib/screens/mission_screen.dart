@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/mission_service.dart';
+import '../models/mission_waypoint.dart';
 import '../widgets/mission_map_widget.dart';
 import '../widgets/mission_list_panel.dart';
+import '../widgets/mission_toolbar.dart';
 
 class MissionScreen extends StatefulWidget {
   const MissionScreen({super.key});
@@ -28,7 +30,7 @@ class _MissionScreenState extends State<MissionScreen> {
       });
 
       if (state == MissionState.success) {
-        _showMessage('Gorev basariyla araca yuklendi!', Colors.green);
+        _showMessage('Görev başarıyla araca yüklendi!', Colors.green);
       } else if (state == MissionState.error) {
         _showMessage('Görev yükleme başarısız! Detay: ${_missionService.lastError}', Colors.red);
       }
@@ -44,6 +46,14 @@ class _MissionScreenState extends State<MissionScreen> {
   void _addWaypoint(LatLng point) {
     setState(() {
       _waypoints.add(MissionWaypoint(position: point, altitude: 50.0));
+    });
+  }
+
+  void _addCommandAtLastPos(MissionCommandType type) {
+    // Haritada nokta yoksa varsayılan Ankara (veya drone konumu) alınır.
+    LatLng pos = _waypoints.isNotEmpty ? _waypoints.last.position : const LatLng(39.920770, 32.854110);
+    setState(() {
+      _waypoints.add(MissionWaypoint(position: pos, commandType: type));
     });
   }
 
@@ -69,7 +79,7 @@ class _MissionScreenState extends State<MissionScreen> {
 
   void _uploadMission() {
     if (_waypoints.isEmpty) {
-      _showMessage('Lutfen once haritaya tiklayarak gorev noktalari belirleyin.', Colors.orange);
+      _showMessage('Lütfen önce görev noktaları belirleyin.', Colors.orange);
       return;
     }
     _missionService.uploadMission(_waypoints);
@@ -84,36 +94,57 @@ class _MissionScreenState extends State<MissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Appbar'ı kaldırıp tam ekran deneyimi sunuyoruz, veya şeffaf bir başlık koyabiliriz.
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Gorev Planlayici (Map)'),
-        backgroundColor: Colors.blueGrey[900],
+        title: const Text('Görev Planlayıcı', style: TextStyle(color: Colors.white, shadows: [Shadow(blurRadius: 3, color: Colors.black)])),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 7, // Ekranın %70'i harita
-                child: MissionMapWidget(
-                  waypoints: _waypoints,
-                  onMapTap: _addWaypoint,
-                  onWaypointTap: (idx) {
-                    // Marker'a tıklanınca eylem
-                  },
-                ),
-              ),
-              Expanded(
-                flex: 3, // Ekranın %30'u panel (Responsive)
-                child: MissionListPanel(
-                  waypoints: _waypoints,
-                  onEdit: _editWaypoint,
-                  onDelete: _deleteWaypoint,
-                  onClearAll: _clearAll,
-                  onUpload: _uploadMission,
-                ),
-              ),
-            ],
+          // 1. Katman: Tam Ekran Harita
+          Positioned.fill(
+            child: MissionMapWidget(
+              waypoints: _waypoints,
+              onMapTap: _addWaypoint,
+              onWaypointTap: (idx) {},
+            ),
           ),
+          
+          // 2. Katman: Sol Araç Çubuğu (Toolbar)
+          Positioned(
+            left: 16,
+            top: 100, // AppBar'ın altına hizala
+            child: MissionToolbar(
+              onAddTakeoff: () => _addCommandAtLastPos(MissionCommandType.takeoff),
+              onAddVtolTakeoff: () => _addCommandAtLastPos(MissionCommandType.vtolTakeoff),
+              onAddWaypoint: () => _addCommandAtLastPos(MissionCommandType.waypoint),
+              onAddTransitionFw: () => _addCommandAtLastPos(MissionCommandType.transitionToFw),
+              onAddTransitionMc: () => _addCommandAtLastPos(MissionCommandType.transitionToMc),
+              onAddLand: () => _addCommandAtLastPos(MissionCommandType.land),
+              onAddVtolLand: () => _addCommandAtLastPos(MissionCommandType.vtolLand),
+              onAddRtl: () => _addCommandAtLastPos(MissionCommandType.rtl),
+            ),
+          ),
+
+          // 3. Katman: Sağ Görev Listesi Paneli
+          Positioned(
+            right: 16,
+            top: 100,
+            bottom: 16,
+            width: 300, // Genişliği sabitliyoruz
+            child: MissionListPanel(
+              waypoints: _waypoints,
+              onEdit: _editWaypoint,
+              onDelete: _deleteWaypoint,
+              onClearAll: _clearAll,
+              onUpload: _uploadMission,
+            ),
+          ),
+
+          // Yükleme Göstergesi
           if (_isUploading)
             Container(
               color: Colors.black54,
@@ -123,7 +154,7 @@ class _MissionScreenState extends State<MissionScreen> {
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Gorev Yukleniyor...', style: TextStyle(color: Colors.white, fontSize: 18)),
+                    Text('Görev Yükleniyor...', style: TextStyle(color: Colors.white, fontSize: 18)),
                   ],
                 ),
               ),

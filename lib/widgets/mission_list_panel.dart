@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/mission_service.dart';
+import '../models/mission_waypoint.dart';
 
 class MissionListPanel extends StatelessWidget {
   final List<MissionWaypoint> waypoints;
@@ -32,18 +32,19 @@ class MissionListPanel extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Noktayı Düzenle (WP ${index + 1})'),
+              title: Text('Item #${index + 1} Düzenle'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<MissionCommandType>(
+                      isExpanded: true,
                       initialValue: currentCmd,
-                      decoration: const InputDecoration(labelText: 'Görev Tipi (Ne Yapılacak?)'),
+                      decoration: const InputDecoration(labelText: 'Görev Komutu'),
                       items: MissionCommandType.values.map((cmd) {
                         return DropdownMenuItem(
                           value: cmd,
-                          child: Text(cmd.label),
+                          child: Text(cmd.label, style: const TextStyle(fontSize: 14)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -54,15 +55,15 @@ class MissionListPanel extends StatelessWidget {
                     TextField(
                       controller: altCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'İrtifa / Yükseklik (metre)'),
+                      decoration: const InputDecoration(labelText: 'İrtifa (m)'),
                     ),
-                    if (currentCmd == MissionCommandType.loiterTime || currentCmd == MissionCommandType.waypoint) ...[
+                    if (currentCmd == MissionCommandType.loiterTime || currentCmd == MissionCommandType.waypoint || currentCmd == MissionCommandType.vtolTakeoff) ...[
                       const SizedBox(height: 10),
                       TextField(
                         controller: paramCtrl,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: currentCmd == MissionCommandType.waypoint ? 'Noktada Bekleme Süresi (saniye)' : 'Havada Tur Atma Süresi (saniye)',
+                          labelText: currentCmd == MissionCommandType.vtolTakeoff ? 'Kalkış Sonrası Bekleme' : 'Bekleme Süresi (saniye)',
                         ),
                       ),
                     ]
@@ -72,7 +73,7 @@ class MissionListPanel extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('İPTAL'),
+                  child: const Text('İptal'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -83,7 +84,7 @@ class MissionListPanel extends StatelessWidget {
                     }
                     Navigator.pop(ctx);
                   },
-                  child: const Text('KAYDET'),
+                  child: const Text('Kaydet'),
                 ),
               ],
             );
@@ -96,19 +97,25 @@ class MissionListPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black87,
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      margin: const EdgeInsets.all(8),
       child: Column(
         children: [
           // Header Section
           Container(
-            padding: const EdgeInsets.all(12.0),
-            color: Colors.blueGrey[900],
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey[900],
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.route, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Görev Noktaları', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text('Mission Items', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('${waypoints.length} items', style: const TextStyle(color: Colors.white70, fontSize: 14)),
               ],
             ),
           ),
@@ -119,7 +126,7 @@ class MissionListPanel extends StatelessWidget {
                 ? const Center(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Text('Haritaya dokunarak güzergah oluşturun.', 
+                      child: Text('Haritadan görev ekleyin veya sol menüden komut seçin.', 
                         style: TextStyle(color: Colors.white54), 
                         textAlign: TextAlign.center
                       ),
@@ -132,7 +139,9 @@ class MissionListPanel extends StatelessWidget {
                       final wp = waypoints[index];
                       return Card(
                         color: Colors.blueGrey[800],
-                        margin: const EdgeInsets.only(bottom: 8.0),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        margin: const EdgeInsets.only(bottom: 6.0),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
@@ -147,34 +156,29 @@ class MissionListPanel extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(wp.commandType.label, style: const TextStyle(color: Colors.orangeAccent, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                    child: Text(wp.commandType.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.delete, color: Colors.white54, size: 20),
+                                    onPressed: () => onDelete(index),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
-                                    child: Text('İrtifa: ${wp.altitude} m\nParam: ${wp.param1}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                    child: Text('İrtifa: ${wp.altitude}m | Param: ${wp.param1}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.edit, color: Colors.amber, size: 20),
-                                        onPressed: () => _showEditDialog(context, index),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                                        onPressed: () => onDelete(index),
-                                      ),
-                                    ],
+                                  InkWell(
+                                    onTap: () => _showEditDialog(context, index),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                      child: Text('Düzenle', style: TextStyle(color: Colors.blueAccent, fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ),
                                   )
                                 ],
                               ),
@@ -189,7 +193,10 @@ class MissionListPanel extends StatelessWidget {
           // Actions Section
           Container(
             padding: const EdgeInsets.all(12.0),
-            color: Colors.blueGrey[900],
+            decoration: BoxDecoration(
+              color: Colors.blueGrey[900],
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

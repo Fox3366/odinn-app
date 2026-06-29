@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../services/mission_service.dart';
+import '../models/mission_waypoint.dart';
 import '../services/telemetry_service.dart';
 import '../services/mavlink_service.dart';
 
