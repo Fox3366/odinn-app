@@ -19,6 +19,7 @@ class _MissionScreenState extends State<MissionScreen> {
   final List<MissionWaypoint> _waypoints = [];
   StreamSubscription? _stateSub;
   bool _isUploading = false;
+  bool _isPanelOpen = false; // Panel başlangıçta kapalı olsun
 
   @override
   void initState() {
@@ -46,6 +47,8 @@ class _MissionScreenState extends State<MissionScreen> {
   void _addWaypoint(LatLng point) {
     setState(() {
       _waypoints.add(MissionWaypoint(position: point, altitude: 50.0));
+      // Kullanıcı haritaya tıkladığında paneli otomatik açabiliriz (opsiyonel)
+      if (!_isPanelOpen) _isPanelOpen = true; 
     });
   }
 
@@ -54,6 +57,7 @@ class _MissionScreenState extends State<MissionScreen> {
     LatLng pos = _waypoints.isNotEmpty ? _waypoints.last.position : const LatLng(39.920770, 32.854110);
     setState(() {
       _waypoints.add(MissionWaypoint(position: pos, commandType: type));
+      if (!_isPanelOpen) _isPanelOpen = true;
     });
   }
 
@@ -74,6 +78,7 @@ class _MissionScreenState extends State<MissionScreen> {
   void _clearAll() {
     setState(() {
       _waypoints.clear();
+      _isPanelOpen = false; // Temizleyince paneli kapat
     });
   }
 
@@ -93,14 +98,35 @@ class _MissionScreenState extends State<MissionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Eğer ekran çok darsa panel genişliğini ekranın büyük kısmı kadar yap, genişse 300px sabitle.
+    final panelWidth = screenWidth > 400 ? 300.0 : screenWidth - 85.0; 
+
     return Scaffold(
-      // Appbar'ı kaldırıp tam ekran deneyimi sunuyoruz, veya şeffaf bir başlık koyabiliriz.
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Görev Planlayıcı', style: TextStyle(color: Colors.white, shadows: [Shadow(blurRadius: 3, color: Colors.black)])),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          // Menüyü Aç/Kapat Butonu
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey[900]?.withOpacity(0.8),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(_isPanelOpen ? Icons.close : Icons.list_alt, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _isPanelOpen = !_isPanelOpen;
+                });
+              },
+            ),
+          )
+        ],
       ),
       body: Stack(
         children: [
@@ -109,13 +135,17 @@ class _MissionScreenState extends State<MissionScreen> {
             child: MissionMapWidget(
               waypoints: _waypoints,
               onMapTap: _addWaypoint,
-              onWaypointTap: (idx) {},
+              onWaypointTap: (idx) {
+                if (!_isPanelOpen) {
+                  setState(() => _isPanelOpen = true);
+                }
+              },
             ),
           ),
           
           // 2. Katman: Sol Araç Çubuğu (Toolbar)
           Positioned(
-            left: 16,
+            left: 12,
             top: 100, // AppBar'ın altına hizala
             child: MissionToolbar(
               onAddTakeoff: () => _addCommandAtLastPos(MissionCommandType.takeoff),
@@ -129,12 +159,14 @@ class _MissionScreenState extends State<MissionScreen> {
             ),
           ),
 
-          // 3. Katman: Sağ Görev Listesi Paneli
-          Positioned(
-            right: 16,
+          // 3. Katman: Sağ Görev Listesi Paneli (Açılır Kapanır)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            right: _isPanelOpen ? 12 : -(panelWidth + 40), // Kapalıyken tamamen gizle
             top: 100,
             bottom: 16,
-            width: 300, // Genişliği sabitliyoruz
+            width: panelWidth, 
             child: MissionListPanel(
               waypoints: _waypoints,
               onEdit: _editWaypoint,
