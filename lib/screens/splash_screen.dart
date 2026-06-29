@@ -144,6 +144,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               opacity: _textOpacity,
               child: const Text(
                 'RAVENS OF THE SKY — TACTICAL INTELLIGENCE',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.red, fontSize: 12,
                   letterSpacing: 4, fontWeight: FontWeight.w400,
@@ -153,14 +154,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             const SizedBox(height: 44),
             FadeTransition(opacity: _textOpacity, child: const LoadingBar()),
           ]),
-        ),
-
-        Positioned(right: 20, bottom: 24,
-          child: FadeTransition(
-            opacity: _textOpacity,
-            child: const Text('v1.0.0',
-                style: TextStyle(color: AppColors.grey, fontSize: 11, letterSpacing: 2)),
-          ),
         ),
 
         Positioned(left: 20, bottom: 24,

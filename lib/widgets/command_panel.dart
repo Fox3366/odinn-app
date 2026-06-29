@@ -5,19 +5,17 @@ import 'follow_me_button.dart';
 import 'tactical_button.dart';
 import 'confirm_dialog.dart';
 import 'orbit_dialog.dart';
+import 'transition_dialog.dart';
 
-/// Ana komut paneli — Follow Me, Orbit, Hold, Back To Land butonları.
-/// Hold hariç tüm komutlar onay dialogu gösterir.
+/// Taktiksel komut paneli — Follow Me, Orbit, Transition butonları.
 class CommandPanel extends StatelessWidget {
   final bool          followActive;
   final FollowState   followState;
   final bool          isConnected;
   final VoidCallback  onFollowToggle;
-  final VoidCallback  onHold;
-  final VoidCallback  onLand;
-  final VoidCallback  onStabilize;
   final void Function(double radius) onOrbit;
   final double        defaultOrbitRadius;
+  final void Function(bool toMulticopter) onTransition;
 
   const CommandPanel({
     super.key,
@@ -25,11 +23,9 @@ class CommandPanel extends StatelessWidget {
     required this.followState,
     required this.isConnected,
     required this.onFollowToggle,
-    required this.onHold,
-    required this.onLand,
-    required this.onStabilize,
     required this.onOrbit,
     this.defaultOrbitRadius = 50.0,
+    required this.onTransition,
   });
 
   String _statusText() {
@@ -59,10 +55,8 @@ class CommandPanel extends StatelessWidget {
     Text(title, style: const TextStyle(color: AppColors.white, fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.w600)),
   ]);
 
-  /// Follow Me toggle — onay dialogu gösterir
   Future<void> _handleFollowToggle(BuildContext context) async {
     if (followActive) {
-      // Kapatma — onay istenmez
       onFollowToggle();
       return;
     }
@@ -76,46 +70,16 @@ class CommandPanel extends StatelessWidget {
     if (confirmed) onFollowToggle();
   }
 
-  /// Orbit — yarıçap dialogu gösterir
   Future<void> _handleOrbit(BuildContext context) async {
     final radius = await OrbitDialog.show(context, defaultRadius: defaultOrbitRadius);
     if (radius != null) onOrbit(radius);
   }
 
-  /// Land — onay dialogu gösterir
-  Future<void> _handleLand(BuildContext context) async {
-    final confirmed = await ConfirmDialog.show(
-      context,
-      title:       'BACK TO LAND',
-      description: 'İniş komutu gönderilecek.\nDrone bulunduğu konumda iniş yapacak.',
-      icon:        Icons.flight_land,
-      accentColor: AppColors.redL,
-    );
-    if (confirmed) onLand();
-  }
-
-  /// Hold — onay dialogu gösterir
-  Future<void> _handleHold(BuildContext context) async {
-    final confirmed = await ConfirmDialog.show(
-      context,
-      title:       'HOLD (HAVADA ASILI KAL)',
-      description: 'Drone bulunduğu konumda havada asılı kalacak (LOITER).\nMevcut görev veya takip durdurulacak.',
-      icon:        Icons.pause_circle_outline,
-      accentColor: Colors.orange,
-    );
-    if (confirmed) onHold();
-  }
-
-  /// Stabilize — onay dialogu gösterir
-  Future<void> _handleStabilize(BuildContext context) async {
-    final confirmed = await ConfirmDialog.show(
-      context,
-      title:       'STABİLİZE',
-      description: 'Drone stabilize moduna alınacak.\nManuel kumanda kontrolü gerektirir.',
-      icon:        Icons.settings_backup_restore,
-      accentColor: AppColors.cyan,
-    );
-    if (confirmed) onStabilize();
+  Future<void> _handleTransition(BuildContext context) async {
+    final toMc = await TransitionDialog.show(context);
+    if (toMc != null) {
+      onTransition(toMc);
+    }
   }
 
   @override
@@ -128,7 +92,7 @@ class CommandPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(3),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _header('KOMUT PANELİ', Icons.gamepad_outlined),
+        _header('TAKTİKSEL YETENEKLER', Icons.radar),
         const SizedBox(height: 14),
         Row(children: [
           Expanded(child: FollowMeButton(active: followActive, onTap: () => _handleFollowToggle(context))),
@@ -137,11 +101,7 @@ class CommandPanel extends StatelessWidget {
         ]),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: TacticalButton(label: 'HOLD', icon: Icons.pause_circle_outline, color: Colors.orange, onTap: () => _handleHold(context))),
-          const SizedBox(width: 10),
-          Expanded(child: TacticalButton(label: 'STABİLİZE', icon: Icons.settings_backup_restore, color: AppColors.cyan, onTap: () => _handleStabilize(context))),
-          const SizedBox(width: 10),
-          Expanded(child: TacticalButton(label: 'BACK TO\nLAND', icon: Icons.flight_land, color: AppColors.redL, onTap: () => _handleLand(context))),
+          Expanded(child: TacticalButton(label: 'TRANSITION (DÖNÜŞÜM)', icon: Icons.transform, color: AppColors.amber, onTap: () => _handleTransition(context))),
         ]),
         const SizedBox(height: 12),
         Container(

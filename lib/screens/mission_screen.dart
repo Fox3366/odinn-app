@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/mission_service.dart';
 import '../models/mission_waypoint.dart';
 import '../widgets/mission_map_widget.dart';
 import '../widgets/mission_list_panel.dart';
 import '../widgets/mission_toolbar.dart';
+import 'main_cubit.dart';
 
 class MissionScreen extends StatefulWidget {
   const MissionScreen({super.key});
@@ -24,6 +26,19 @@ class _MissionScreenState extends State<MissionScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Uçuş modu AUTO MISSION ise yüklü görevi haritaya getir
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<MainCubit>();
+      if (cubit.state.droneTelemetry.flightMode == 'AUTO MISSION') {
+        if (_missionService.currentMission.isNotEmpty) {
+          setState(() {
+            _waypoints.addAll(_missionService.currentMission);
+          });
+        }
+      }
+    });
     _stateSub = _missionService.stateStream.listen((state) {
       if (!mounted) return;
       setState(() {

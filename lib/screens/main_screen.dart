@@ -227,11 +227,14 @@ class _MainScreenBodyState extends State<_MainScreenBody> with TickerProviderSta
                 if (state.mapFullscreen) {
                   return _buildFullscreen(state);
                 }
+                final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
                 return SafeArea(
                   child: Column(children: [
                     TopBar(isConnected: state.isConnected, pulse: _pulse),
-                    _buildMapArea(state),
-                    const SizedBox(height: 6),
+                    if (!isKeyboardOpen) ...[
+                      _buildMapArea(state),
+                      const SizedBox(height: 6),
+                    ],
                     TelemetryBar(telemetry: state.droneTelemetry, flightTime: state.flightTime),
                     const SizedBox(height: 2),
                     _buildTabBar(),
@@ -289,11 +292,9 @@ class _MainScreenBodyState extends State<_MainScreenBody> with TickerProviderSta
               followState:        state.followState,
               isConnected:        state.isConnected,
               onFollowToggle:     cubit.toggleFollow,
-              onHold:             cubit.sendHold,
-              onLand:             cubit.sendLand,
               onOrbit:            cubit.sendOrbit,
-              onStabilize:        cubit.sendStabilize,
               defaultOrbitRadius: state.flightSettings.defaultOrbitRadius,
+              onTransition:       cubit.sendTransition,
             ),
             if (state.followActive) ...[
               const SizedBox(height: 10),
@@ -306,7 +307,9 @@ class _MainScreenBodyState extends State<_MainScreenBody> with TickerProviderSta
               onTakeoff:      () => _onTakeoff(state),
               onRtl:          _onRtl,
               onMissionStart: _onMissionStart,
-              onTransition:   cubit.sendTransition,
+              onLand:         cubit.sendLand,
+              onHold:         cubit.sendHold,
+              onStabilize:    cubit.sendStabilize,
             ),
             const SizedBox(height: 10),
             ElevatedButton.icon(

@@ -23,6 +23,7 @@ class MissionService {
   MissionState _currentState = MissionState.idle;
 
   List<MissionWaypoint> _currentMission = [];
+  List<MissionWaypoint> get currentMission => _currentMission;
   Timer? _timeoutTimer;
   int _retryCount = 0;
   static const int _maxRetryCount = 5;

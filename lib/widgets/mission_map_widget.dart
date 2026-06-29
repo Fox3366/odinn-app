@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -110,6 +111,34 @@ class _MissionMapWidgetState extends State<MissionMapWidget> {
           )
         )
       );
+    }
+
+    // Yön Okları (Directional Arrows)
+    const distanceCalc = Distance();
+    for (int i = 0; i < points.length - 1; i++) {
+      final p1 = points[i];
+      final p2 = points[i + 1];
+      
+      final dist = distanceCalc(p1, p2);
+      // Sadece 5 metreden uzak noktalar arasına ok çiz (iç içe binmemesi için)
+      if (dist > 5.0) {
+        final bearing = distanceCalc.bearing(p1, p2);
+        final midpoint = distanceCalc.offset(p1, dist / 2, bearing);
+        
+        markers.add(
+          Marker(
+            point: midpoint,
+            width: 40,
+            height: 40,
+            child: IgnorePointer(
+              child: Transform.rotate(
+                angle: bearing * (math.pi / 180.0),
+                child: const Icon(Icons.arrow_upward_rounded, color: Colors.blueAccent, size: 40),
+              ),
+            ),
+          )
+        );
+      }
     }
 
     return Stack(
