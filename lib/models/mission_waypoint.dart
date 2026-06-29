@@ -64,10 +64,10 @@ class MissionWaypoint {
     required this.position, 
     this.altitude = 50.0,
     this.commandType = MissionCommandType.waypoint,
-    this.param1 = 0.0,
-    this.param2 = 0.0,
-    this.param3 = 0.0,
-    this.param4 = 0.0, // 0.0 or double.nan for default
+    this.param1 = double.nan,
+    this.param2 = double.nan,
+    this.param3 = double.nan,
+    this.param4 = double.nan,
     this.autoContinue = true,
     this.frame = 6, 
   });

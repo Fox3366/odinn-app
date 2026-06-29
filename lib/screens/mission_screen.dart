@@ -47,8 +47,6 @@ class _MissionScreenState extends State<MissionScreen> {
   void _addWaypoint(LatLng point) {
     setState(() {
       _waypoints.add(MissionWaypoint(position: point, altitude: 50.0));
-      // Kullanıcı haritaya tıkladığında paneli otomatik açabiliriz (opsiyonel)
-      if (!_isPanelOpen) _isPanelOpen = true; 
     });
   }
 
@@ -57,7 +55,6 @@ class _MissionScreenState extends State<MissionScreen> {
     LatLng pos = _waypoints.isNotEmpty ? _waypoints.last.position : const LatLng(39.920770, 32.854110);
     setState(() {
       _waypoints.add(MissionWaypoint(position: pos, commandType: type));
-      if (!_isPanelOpen) _isPanelOpen = true;
     });
   }
 
@@ -136,9 +133,7 @@ class _MissionScreenState extends State<MissionScreen> {
               waypoints: _waypoints,
               onMapTap: _addWaypoint,
               onWaypointTap: (idx) {
-                if (!_isPanelOpen) {
-                  setState(() => _isPanelOpen = true);
-                }
+                // Sadece kullanıcı kendi isterse sağ üstten paneli açacak.
               },
             ),
           ),
